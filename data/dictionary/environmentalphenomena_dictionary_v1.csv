@@ -1,0 +1,176 @@
+term,parent,synonyms
+Fog,parent,mist; fogginess; haze; haziness
+Haar,Fog,sea fret; cold sea fog
+Ice fog,Fog,frozen fog
+wind,,breeze
+zephyr,wind,light wind; mild wind; western wind; West wind
+Storm,wind,strong wind; high wind; severe wind; tempest
+Thunderstorm,Storm,Electrical Storm
+Derecho,Thunderstorm; squall,damaging thunderstorm; severe thunderstorm
+Multicellular thunderstorm,Thunderstorm,Complex thunderstorm system
+Pulse storm,Thunderstorm,Single-cell thunderstorm; short-lived thunderstorm
+Squall line,Thunderstorm,"quasi-linear convective system; QLCS, line of thunderstorms; Line squall"
+Storm cell,Thunderstorm,
+Supercell,Thunderstorm,rotating thunderstorms
+Lightning,Thunderstorm,
+Thunder,Thunderstorm,
+Wildfire,,wild fire; bushfire; bush fire; forest fire; wildland fire; rural fire; fire
+Firestorm,Wildfire,
+Fire whirl,Wildfire; tornado,firenado: fire tornado; fire devil
+Flood,,flooding
+Flash flood,Flood,Flash flooding; surge swell; sudden flooding; sudden flood
+Coastal flooding,Flood,Coastal flood
+riverine flooding,Flood,river flooding; riverine flood; river overflow
+Tidal flood,coastal flooding,Tidal flooding; sunny day flood; sunny day flooding; nuisance flood; nuisance flooding; high tide flooding
+Storm surge,coastal flooding,storm flood; tidal surge; storm tide
+algal bloom,,algae bloom; harmful algal bloom; HAB; harmful algae bloom; excessive algae growth; algae bloom; algal bloom; red tide; algal outbreak
+cyanobacteria bloom,algal bloom,cyanobacteria growth; cyanobacterial growth; Cyanobacteriota growth; Cyanophyta growth;  cyanobacterial bloom; Cyanobacteriota bloom; Cyanophyta bloom; Blue green algae bloom;  Blue-green algae bloom
+dinoflagellate bloom,algal bloom,dinoflagellate growth
+diatom bloom,algal bloom,diatom growth
+tide,,
+High tide,tide,flood tide
+King tide,tide,high spring tide; perigean spring tide
+wave,,
+Rogue wave,wave,freak wave; monster wave; killer wave; extreme wave
+Sneaker wave,wave,sleeper wave; king wave
+Seiche,wave,standing wave
+Swell,wave,ground swell; surface gravity swell
+meteotsunami,tsunami,
+tsunami,wave,
+current,,stream
+Rip current,current,rip tide
+Undertow,current,
+Whirlpool,current,maelstrom; water vortex
+precipitation,,
+snow,precipitation; cold condition,snowfall
+snow storm,snow,blizzard; winter storm; snowstorm
+winter weather,snow; ice,forsty conditions
+Avalanche,snow,snowslide
+snow whirlwind,tornado; snow,snow devil; snownado
+ice,cold condition,frost
+Black ice,ice,clear ice; invisible ice
+Glaze ice,ice,glaze; glazed frost
+Hail,ice; precipitation,hailstorm; hail storm
+Ice shove,ice,ice surge; ice push
+Ice storm,ice; storm,glaze event; silver storm; freezing rain
+Megacryometeor,ice,large hailstone; giant hailstone; large hail stone; giant hail stone
+rain,precipitation,rainfall; rain fall; rain shower; shower; drizzle; deluge; downpour; wet weather
+acid rain,rain,polluted rain
+Blood rain,rain,red rain
+Cold drop,rain,gota fria; sudden temperature drop
+Rainstorm,rain; storm,torrential rain
+Monsoon,rain,seasonal rainstorm
+mass wasting,,mass movement
+Landslide,mass wasting,landslip; land slide; land slip; 
+Debris flows,mass wasting,debris avalanche
+Mudslide,mass wasting,mud flow; mudflow; mud slide
+Rockfall,mass wasting,rock-fall; rock fall; rockslide; rock slide
+Coastal erosion,mass wasting,shoreline erosion; shoreline retreat
+Sinkhole,mass wasting,sink hole
+cold wave,cold condition,extreme cold; coldwave
+heat wave,warm condition,extreme heat; heatwave
+heat burst,warm condition,sudden heat surge
+Polar vortex,cyclone,circumpolar vortex; polar cyclone; arctic cyclone
+wind,,
+cyclone,wind,
+Extratropical cyclone,cyclone,mid-latitude cyclone; wave cyclone
+European windstorms,Extratropical cyclone,
+Australian East Coast Low,Extratropical cyclone,East Coast cyclone
+Mediterranean tropical-like cyclone,Extratropical cyclone,Medicane; Mediterranean cyclone; Mediterranean hurricane
+Tropical cyclone,cyclone,hurricane; typhoon
+Subtropical cyclone,Extratropical cyclone,
+Explosive cyclogenesis,cyclone, weather bomb; meteorological bomb; bomb cyclone; bombogenesis
+Dust storm,wind,sand storm; sandstorm
+Haboob,dust storm,
+Dust devil,tornado; dust storm,dust whirl
+Katabatic wind,wind,catabatic wind; fall wind; downslope wind
+Bohemian wind,Katabatic wind,böhm
+Bora,Katabatic wind,
+Piteraq,Katabatic wind,
+Gregale,Katabatic wind,
+Anabatic wind ,Katabatic wind,
+Valley exit jet,Katabatic wind,
+Santa Ana winds,Katabatic wind,Santa Ana wind
+Williwaw,Katabatic wind,
+Chinook,Katabatic wind,chinook wind
+Gale,wind,gale-force wind
+Nor’easter,wind,
+Nor'wester,wind,Kalbaisakhi; bordoisila
+Steam devil,tornado,winter thunderstorm; thundersnow storm
+Squall,wind,
+Straight-line wind,squall,downburst; downburst wind
+Tornado,,whirlwind; twister
+Landspout,Tornado,
+Gustnado,Tornado,gust front tornado
+Waterspout,Tornado,
+Winter storm,storm; cold condition,
+Wind gust,wind,gust; wind burst
+Gust front,wind,
+cold front,cold condition,
+Heat lightning,lightning,silent lightning; summer lightning; dry lightning 
+Dry thunderstorm,thunderstorm,lightning without rain
+weather front,,
+Snowsquall,snow,snow squall
+Thundersnow,thunderstorm,winter thunderstorm; thundersnow storm
+windstorm,wind,
+downburst,rain,
+microburst,downburst,
+macroburst,downburst,
+drought,,
+El Niño,,El Niño–Southern Oscillation; ENSO
+La Niña,,
+Zud,,dzud; dzhut; zhut; djut; jut; tsagaan; white zud; khar; black zud; tumur; iron zud; huiten; cold zud; havsarsin; combined zud; tuuvaryin zud
+volcanic eruption,,volcanic outbreak; volcanic eruption; volcanic activity
+earthquake,,earth quake; aftershock; earth tremor; seismic activity
+solar storm,,
+Asian dust,dust storm,
+cloudburst,rain,torrential rain
+cryoseism,,ice quake; frost quake
+freezing drizzle,rain; ice,freezing rain; ice rain
+Genoa low,cyclone,
+ice jam,ice,ice blockage
+jumble ice,ice,
+Kallakadal,Flood,
+megadrought,drought,prolonged drought
+monga,,mora Kartik
+post-tropical cyclone,cyclone,
+rotten ice,ice,
+severe thunderstorm outbreak,thunderstorm,
+severe weather,,severe weather outbreak; extreme weather
+whiteout,,white-out; milky weather
+sleet,ice,
+natural disaster,,natural catastrophe
+environmental disaster,,environmental disaster; environmental catastrophe
+limnic eruption,,lake overturn
+hot condition,warm condition,high temperature; hot weather; sweltering weather
+warm condition,,warm weather; mild condition; mild weather
+humid condition,,humid weather; moist weather; moist condition
+dry condition,,dry weather; arid weather; arid condition
+cold condition,,low temperature; freezing temperature; cold weather
+climate change,,global warming; climate crisis; climate emergency
+Desertification,,desert expansion
+deforestation,,
+glacier melting,,glacier retreat; deglaciation
+sea level rise,,"sea-level-rise, sea-level rise, increase in sea-level, increase in sea level"
+aridification,,
+smoke,volcanic activity; wildfire,
+ashfall,volcanic activity; wildfire,ash rain; volcanic ash
+Magmatic eruption,volcanic activity,volcanic explosion; lava eruption
+Phreatic eruption,volcanic activity, phreatic explosion; ultravulcanian eruption; steam-blast eruption; steam eruption
+Phreatomagmatic eruption,volcanic activity,
+weather,,atmospheric condition
+climate,,"weather pattern, climatic condition"
+Glacial Lake Outburst Flood,,GLOF
+high UV index,,high UV radiation; high ultraviolet radiation
+high-pressure system,,high pressure system; high-pressure area; high pressure area
+low-pressure system,,low pressure system; low-pressure area; low pressure area
+Ozone depletion,,ozone hole; ozone layer depletion; ozone hole formation
+CO2 increase,,carbon dioxide increase; carbon dioxide rise; CO2 rise
+land system change,,landscape modification
+ocean acidification,,marine acidification; seawater acidity increase
+freshwater change,,freshwater transformation; freshwater alteration
+solar flare,,solar eruption
+thunderhead,thunderstorm,
+storm front,storm,
+smog,,
+eutrophication,,
