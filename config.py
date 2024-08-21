@@ -10,5 +10,3 @@ ONTO_DIR = os.path.join(DATA_DIR, "ontologies")
 SCRIPTS_DIR = os.path.join(PROJECT_ROOT, "scripts")
 RESULTS_DIR = os.path.join(PROJECT_ROOT, "results")
 
-
-print("PROJECT_ROOT:", PROJECT_ROOT)
