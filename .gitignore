@@ -3,3 +3,5 @@ lib/**
 virtenvEnviDis/**
 **pycache**
 desktop.ini
+envidis_dev_env/**
+results/**
