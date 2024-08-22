@@ -3,8 +3,7 @@
 import config as cfg
 from scripts.vocabs import Vocab
 
-# Example usage
-directory = f"{cfg.DATA_DIR}/processed/dictionaries/"
+directory = f"{cfg.PROC_DATA_DIR}/vocabs/"
 
 # Build vocab instance
 voc = Vocab(directory)
