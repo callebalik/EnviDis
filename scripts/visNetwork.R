@@ -51,18 +51,18 @@ for (i in seq_len(nrow(co_occurrence_matrix))) {
 # Convert nodes and edges to an igraph object
 graph <- graph_from_data_frame(edges, directed = FALSE)
 
-#Louvain Comunity Detection
+# Louvain Comunity Detection
 cluster <- cluster_louvain(graph)
 
 cluster_df <- data.frame(as.list(membership(cluster)))
 cluster_df <- as.data.frame(t(cluster_df))
 cluster_df$label <- rownames(cluster_df)
 
-#Create group column
+# Create group column
 nodes <- left_join(nodes, cluster_df, by = "label")
 colnames(nodes)[3] <- "group"
 
-  # Ensure 'from' and 'to' columns exist in edges data frame
+# Ensure 'from' and 'to' columns exist in edges data frame
 if (!all(c("from", "to") %in% colnames(edges))) {
   stop("The 'from' and 'to' columns are missing in the edges data frame.")
 }
@@ -71,7 +71,9 @@ if (!all(c("from", "to") %in% colnames(edges))) {
 nodes <- nodes %>% distinct(id, .keep_all = TRUE)
 
 # Create the network visualization
-network <- visNetwork(nodes, edges, width = "100%", height = "700px") %>%
+network <- visNetwork(nodes, edges, width = "100%", height = "1000px") %>%
+  # fix randomSeed to keep positions consistent
+  visIgraphLayout(physics = TRUE, smooth = TRUE, randomSeed = 123, layout = "layout_nicely") %>% # This will use the igraph layout that more clearly shows the clusters
   visNodes(
     shape = "circle",
     color = list(
@@ -82,7 +84,7 @@ network <- visNetwork(nodes, edges, width = "100%", height = "700px") %>%
     shadow = list(enabled = TRUE, size = 5),
     font = list(
       color = "#000000", # Font color
-      size = 11, # Font size
+      size = 13, # Font size
       face = "calibri" # Font family
     )
   ) %>%
@@ -90,7 +92,6 @@ network <- visNetwork(nodes, edges, width = "100%", height = "700px") %>%
     shadow = FALSE,
     color = list(color = "#36a0c1d8", highlight = "#fe7e7e"),
     smooth = list(enabled = TRUE, type = "continuous"),
-
   ) %>%
   visOptions(
     highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE), # nolint: indentation_linter.
@@ -98,7 +99,11 @@ network <- visNetwork(nodes, edges, width = "100%", height = "700px") %>%
     nodesIdSelection = TRUE,
   ) %>%
   visLayout(randomSeed = 14) %>%
-  visPhysics(stabilization = TRUE)
+  visPhysics(
+    # choose the solver (‘barnesHut’, ‘repulsion’, ‘hierarchicalRepulsion’, ‘forceAtlas2Based’), and set options
+    solver = "forceAtlas2Based",
+    stabilization = TRUE
+  )
 
 # Save the network visualization to an HTML file
 visSave(network, file = network_file, selfcontained = FALSE)
