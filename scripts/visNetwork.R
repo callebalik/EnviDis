@@ -5,31 +5,45 @@ library(visNetwork)
 library(igraph)
 library(tidyverse)
 library(shiny)
+library(readr)
 
 # Data Preparation --------------------------------------------------------
 
-# Read the co-occurrence matrix
-# co_occurrence_matrix <- read_csv("scripts/co_occurrence_matrix.csv", show_col_types = FALSE)
+# Read the co-occurrence matrix from the CSV file
 co_occurrence_matrix <- read.csv("tests/co_occurrence_matrix.csv", row.names = 1)
+# Calculate the degree of each node
+node_degrees <- rowSums(co_occurrence_matrix) + colSums(co_occurrence_matrix)
 
-# Convert the matrix to long format
-co_occurrence_long <- co_occurrence_matrix %>%
-    rownames_to_column(var = "source") %>%
-    tidyr::gather(key = "target", value = "weight", -source) %>%
-    dplyr::filter(weight > 0)
+# Calculate the number of unique connections for each node
+unique_connections <- rowSums(co_occurrence_matrix > 0) + colSums(co_occurrence_matrix > 0)
 
-# Create nodes and edges for visNetwork
-nodes <- data.frame(id = unique(c(co_occurrence_long$source, co_occurrence_long$target)))
-edges <- data.frame(from = co_occurrence_long$source, to = co_occurrence_long$target, value = co_occurrence_long$weight, label = co_occurrence_long$weight)
+# Create nodes data frame with size based on unique connections
+nodes <- data.frame(id = colnames(co_occurrence_matrix), label = colnames(co_occurrence_matrix), value = unique_connections)
 
-# Check if pandoc is installed
-# if (Sys.which("pandoc") == "") {
-#   stop("Pandoc is not installed. Please install pandoc from https://bookdown.org/yihui/rmarkdown-cookbook/install-pandoc.html")
-# }
+
+# Create edges data frame
+edges <- data.frame()
+for (i in seq_len(nrow(co_occurrence_matrix))) {
+  for (j in i:ncol(co_occurrence_matrix)) {
+    if (co_occurrence_matrix[i, j] > 0) {
+      edges <- rbind(edges, data.frame(from = rownames(co_occurrence_matrix)[i], to = colnames(co_occurrence_matrix)[j], label = co_occurrence_matrix[i, j], value = co_occurrence_matrix[i, j]))
+    }
+  }
+}
 
 # Ensure 'group' column exists in node data frame
 if (!"group" %in% colnames(nodes)) {
     nodes$group <- NA # or assign appropriate default values
+}
+
+# Ensure 'id' column exists in nodes data frame
+if (!"id" %in% colnames(nodes)) {
+    stop("The 'id' column is missing in the nodes data frame.")
+}
+
+# Ensure 'from' and 'to' columns exist in edges data frame
+if (!all(c("from", "to") %in% colnames(edges))) {
+    stop("The 'from' and 'to' columns are missing in the edges data frame.")
 }
 
 # Ensure 'id' column is unique in nodes data frame
