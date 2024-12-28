@@ -19,6 +19,11 @@ if (!dir.exists(exported_network_dir)) {
 node_positions_file <- file.path(exported_network_dir, "node_positions.csv")
 network_file <- file.path(exported_network_dir, "network.html")
 
+# Clense previous data
+if (file.exists(node_positions_file)) {
+  file.remove(node_positions_file)
+}
+
 # Data Preparation --------------------------------------------------------
 
 # Read the co-occurrence matrix from the CSV file
@@ -42,6 +47,20 @@ for (i in seq_len(nrow(co_occurrence_matrix))) {
     }
   }
 }
+
+# Convert nodes and edges to an igraph object
+graph <- graph_from_data_frame(edges, directed = FALSE)
+
+#Louvain Comunity Detection
+cluster <- cluster_louvain(graph)
+
+cluster_df <- data.frame(as.list(membership(cluster)))
+cluster_df <- as.data.frame(t(cluster_df))
+cluster_df$label <- rownames(cluster_df)
+
+#Create group column
+nodes <- left_join(nodes, cluster_df, by = "label")
+colnames(nodes)[3] <- "group"
 
 # Ensure 'group' column exists in node data frame
 
