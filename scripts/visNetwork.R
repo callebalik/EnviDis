@@ -7,10 +7,23 @@ library(tidyverse)
 library(shiny)
 library(readr)
 
+# File Paths --------------------------------------------------------------
+co_occurrence_matrix_file <- "tests/data/generated/co_occurrence_matrix.csv"
+exported_network_dir <- "tests/data/export/network"
+
+# Create the directory if it does not exist
+if (!dir.exists(exported_network_dir)) {
+  dir.create(exported_network_dir, recursive = TRUE)
+}
+
+node_positions_file <- file.path(exported_network_dir, "node_positions.csv")
+network_file <- file.path(exported_network_dir, "network.html")
+
 # Data Preparation --------------------------------------------------------
 
 # Read the co-occurrence matrix from the CSV file
-co_occurrence_matrix <- read.csv("tests/co_occurrence_matrix.csv", row.names = 1)
+co_occurrence_matrix <- read.csv(co_occurrence_matrix_file, row.names = 1)
+
 # Calculate the degree of each node
 node_degrees <- rowSums(co_occurrence_matrix) + colSums(co_occurrence_matrix)
 
@@ -19,7 +32,6 @@ unique_connections <- rowSums(co_occurrence_matrix > 0) + colSums(co_occurrence_
 
 # Create nodes data frame with size based on unique connections
 nodes <- data.frame(id = colnames(co_occurrence_matrix), label = colnames(co_occurrence_matrix), value = unique_connections)
-
 
 # Create edges data frame
 edges <- data.frame()
@@ -51,7 +63,7 @@ if (!all(c("from", "to") %in% colnames(edges))) {
 nodes <- nodes %>% distinct(id, .keep_all = TRUE)
 
 # Load saved node positions if they exist
-positions_file <- "node_positions.csv"
+positions_file <- node_positions_file
 if (file.exists(positions_file)) {
   node_positions <- read.csv(positions_file)
   if (!"id" %in% colnames(node_positions)) {
@@ -63,7 +75,7 @@ if (file.exists(positions_file)) {
 }
 
 # Create the network visualization
-network <- visNetwork(nodes, edges, width = "100%") %>%
+network <- visNetwork(nodes, edges, width = "100%", height = "700px") %>%
   visNodes(
     shape = "circle",
     color = list(
@@ -102,7 +114,7 @@ network <- visNetwork(nodes, edges, width = "100%") %>%
     }")
 
 # Save the network visualization to an HTML file
-visSave(network, file = "tests/network.html", selfcontained = FALSE)
+visSave(network, file = network_file, selfcontained = FALSE)
 
 # Save node positions after stabilization
 observeEvent(input$node_positions, {
@@ -114,4 +126,4 @@ observeEvent(input$node_positions, {
 })
 
 # Assuming node positions are stored in a data frame called 'node_positions'
-write.csv(node_positions, file = "node_positions.csv", row.names = FALSE)
+write.csv(node_positions, file = node_positions_file, row.names = FALSE)

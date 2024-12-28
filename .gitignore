@@ -5,3 +5,5 @@ virtenvEnviDis/**
 desktop.ini
 envidis_dev_env/**
 results/**
+tests/data/generated/**
+tests/data/export/**
