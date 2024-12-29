@@ -7,3 +7,6 @@ envidis_dev_env/**
 results/**
 tests/data/generated/**
 tests/data/export/**
+data/export/cooccurence_network/top_50_pre_manual_drop/**
+data/processed/entities/**
+tests/data/temp/*
