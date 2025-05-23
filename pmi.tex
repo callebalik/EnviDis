@@ -1,0 +1,22 @@
+\documentclass{article}
+\usepackage{amsmath}
+
+\begin{document}
+
+\section*{Normalized Pointwise Mutual Information}
+
+The pointwise mutual information (PMI) between two random variables \(entity_1\) and \(entity_2\) is defined as:
+
+\begin{equation}
+\text{PMI}(entity_1, entity_2) = \log \frac{P(entity_1, entity_2)}{P(entity_1) P(entity_2)}
+\end{equation}
+
+The normalized pointwise mutual information (NPMI) between two random variables \(entity_1\) and \(entity_2\) is defined as:
+
+\begin{equation}
+\text{NPMI}(entity_1, entity_2) = \frac{\log \frac{P(entity_1, entity_2)}{P(entity_1) P(entity_2)}}{-\log P(entity_1, entity_2)}
+\end{equation}
+
+where \(P(entity_1, entity_2)\) is the joint probability of \(entity_1\) and \(entity_2\), and \(P(entity_1)\) and \(P(entity_2)\) are the marginal probabilities of \(entity_1\) and \(entity_2\), respectively.
+
+\end{document}
