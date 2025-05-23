@@ -1,6 +1,7 @@
 import pandas as pd
 from config_loader import cfg
 from typing import Optional, List
+from scipy.cluster.hierarchy import linkage, leaves_list
 
 
 def read_csv(input_filepath: str) -> pd.DataFrame:
@@ -91,13 +92,28 @@ def drop_unconnected_entities(matrix: pd.DataFrame) -> pd.DataFrame:
     return matrix
 
 
+def order_entities(matrix: pd.DataFrame) -> pd.DataFrame:
+    # Perform hierarchical clustering on rows and columns
+    row_linkage = linkage(matrix, method="average")
+    col_linkage = linkage(matrix.T, method="average")
+
+    # Get the order of rows and columns based on the clustering
+    row_order = leaves_list(row_linkage)
+    col_order = leaves_list(col_linkage)
+
+    # Reorder the matrix
+    ordered_matrix = matrix.iloc[row_order, col_order]
+
+    return ordered_matrix
+
+
 if __name__ == "__main__":
     input_filepath = cfg.DATA_DIR + "/processed/entities/cooc50.csv"
     output_filepath = cfg.DATA_DIR + "/processed/entities/cooc50_matrix.csv"
 
     limit_rows = None  # Example row limit
     limit_columns = None  # Example column limit
-    percentile_threshold = 0.6  # Example percentile threshold
+    percentile_threshold = 0.8  # Example percentile threshold
 
     df = read_csv(input_filepath)
     df = filter_frequency(df, percentile_threshold)
@@ -118,6 +134,7 @@ if __name__ == "__main__":
         "landslide",
         "soil erosion",
         "air pollution",
+        "hurricane",
     ]
 
     diseases_amibgous = ["ad"]
@@ -133,4 +150,5 @@ if __name__ == "__main__":
         column_filters=disease_ecluded,
     )
     cooccurrence_matrix = drop_unconnected_entities(cooccurrence_matrix)
+    cooccurrence_matrix = order_entities(cooccurrence_matrix)
     save_cooccurrence_matrix(cooccurrence_matrix, output_filepath)
