@@ -6,8 +6,33 @@ This script generates simulated time series data for entity counts and document 
 import pandas as pd
 import numpy as np
 
+# Module-level constants for data generation types
+DATA_GENERATION_TYPE = "non_constant_upward"  # Options: "constant_upward", "non_constant_upward"
 
-def generate_sample_data(start_year=1970, end_year=2024, seed=42):
+GENERATION_TYPES = {
+    "constant_upward": "Constant upward trend",
+    "non_constant_upward": "Non-constant upward trend (with variations)"
+}
+
+
+def generate_constant_upward_trend(years, start_year):
+    """Generate entities with a constant linear upward trend."""
+    trend = 100 + 5 * (years - start_year)  # Linear growth
+    return np.maximum(10, trend)
+
+
+def generate_non_constant_upward_trend(years, start_year):
+    """Generate entities with a non-constant upward trend (cubic with variations)."""
+    trend = (
+        500 +
+        2 * (years - start_year) +
+        0.1 * (years - start_year)**2 -
+        0.005 * (years - start_year)**3
+    )
+    return np.maximum(10, trend)
+
+
+def generate_sample_data(start_year=1970, end_year=2024, seed=42, generation_type=None):
     """
     Generate sample time series data for analysis.
 
@@ -19,12 +44,20 @@ def generate_sample_data(start_year=1970, end_year=2024, seed=42):
         Ending year for the time series (inclusive)
     seed : int
         Random seed for reproducibility
+    generation_type : str, optional
+        Type of data generation. If None, uses DATA_GENERATION_TYPE constant
 
     Returns:
     --------
     pd.DataFrame
         DataFrame with Year as index and ObservedEntities, TotalDocuments as columns
     """
+    if generation_type is None:
+        generation_type = DATA_GENERATION_TYPE
+
+    if generation_type not in GENERATION_TYPES:
+        raise ValueError(f"Invalid generation_type. Must be one of: {list(GENERATION_TYPES.keys())}")
+
     years = np.arange(start_year, end_year + 1)
     np.random.seed(seed)
 
@@ -36,15 +69,11 @@ def generate_sample_data(start_year=1970, end_year=2024, seed=42):
     )
     total_documents = np.maximum(10000, total_documents).astype(int)
 
-    # Simulate true underlying entity counts (unobserved) with a non-monotonic trend
-    # For demonstration, let's imagine a cubic trend for the true entities
-    true_entity_trend = (
-        500 +
-        2 * (years - start_year) +
-        0.1 * (years - start_year)**2 -
-        0.005 * (years - start_year)**3
-    )
-    true_entity_trend = np.maximum(10, true_entity_trend)
+    # Generate true underlying entity counts based on selected type
+    if generation_type == "constant_upward":
+        true_entity_trend = generate_constant_upward_trend(years, start_year)
+    elif generation_type == "non_constant_upward":
+        true_entity_trend = generate_non_constant_upward_trend(years, start_year)
 
     # Simulate observed entity counts (Y_t) as a sample of the true entities,
     # influenced by total documents and NER sensitivity (assumed constant here)
@@ -80,7 +109,8 @@ def save_sample_data(data, filepath):
 
 
 if __name__ == "__main__":
-    # Generate sample data
+    # Generate sample data using the module constant
+    print(f"Generating data with type: {DATA_GENERATION_TYPE} ({GENERATION_TYPES[DATA_GENERATION_TYPE]})")
     data = generate_sample_data()
 
     print("Sample Data Head:")
@@ -91,4 +121,10 @@ if __name__ == "__main__":
     print(f"Year range: {data.index.min()} - {data.index.max()}")
 
     # Save to file
-    save_sample_data(data, '/home/callebalik/EnviDis/data/processed/sample_time_series_data.csv')
+    filename = f'/home/callebalik/EnviDis/data/processed/sample_time_series_data_{DATA_GENERATION_TYPE}.csv'
+    save_sample_data(data, filename)
+
+    # Demonstrate different generation types
+    print("\nAvailable generation types:")
+    for key, description in GENERATION_TYPES.items():
+        print(f"  {key}: {description}")

@@ -87,7 +87,11 @@ class TimeSeriesAnalysisPipeline:
 
         print("\nAnalyzing autocorrelation...")
         analyzer = AutocorrelationAnalyzer(self.best_model)
-        analyzer.plot_acf_residuals(save_path=f"{self.output_dir}/plots/acf_residuals.png")
+
+        # Create comprehensive diagnostic plots
+        print("Creating model diagnostic plots...")
+        analyzer.create_diagnostic_plots(self.data, f"{self.output_dir}/plots")
+
         dw_results = analyzer.durbin_watson_test()
         analyzer.print_diagnostics()
 
@@ -103,8 +107,17 @@ class TimeSeriesAnalysisPipeline:
             lagged_fitter.fit_lagged_model(lag_periods=1)
             lagged_fitter.print_results()
 
+            # Create lagged model plots
+            print("Creating lagged model plots...")
+            lagged_fitter.plot_lagged_model_fit(
+                save_path=f"{self.output_dir}/plots/lagged_model_fit.png"
+            )
+            lagged_fitter.compare_models_plot(
+                save_path=f"{self.output_dir}/plots/model_comparison.png"
+            )
+
             # Analyze lagged model residuals
-            print("\nAnalyzing lagged model residuals...")
+            print("Analyzing lagged model residuals...")
             lagged_fitter.analyze_lagged_residuals(
                 save_path=f"{self.output_dir}/plots/acf_lagged_residuals.png"
             )

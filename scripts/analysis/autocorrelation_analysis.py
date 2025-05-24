@@ -107,6 +107,129 @@ class AutocorrelationAnalyzer:
             print("Warning: Significant autocorrelation detected in residuals.")
             print("Consider including lagged dependent variables in the model.")
 
+    def plot_fitted_vs_actual(self, data, save_path=None):
+        """
+        Plot fitted values vs actual data over time.
+
+        Parameters:
+        -----------
+        data : pd.DataFrame
+            Original data with Year as index and ObservedEntities column
+        save_path : str, optional
+            Path to save the plot
+        """
+        # Get fitted values
+        fitted_values = self.model_results.fittedvalues
+        actual_values = data['ObservedEntities']
+        years = data.index
+
+        # Create the plot
+        plt.figure(figsize=(12, 8))
+
+        # Plot actual data
+        plt.plot(years, actual_values, 'o-', label='Actual Data',
+                color='blue', markersize=6, linewidth=2)
+
+        # Plot fitted values
+        plt.plot(years, fitted_values, 's-', label='Fitted Model',
+                color='red', markersize=4, linewidth=2, alpha=0.8)
+
+        # Add confidence intervals if available
+        try:
+            # Get prediction intervals
+            predictions = self.model_results.get_prediction()
+            conf_int = predictions.conf_int()
+
+            plt.fill_between(years, conf_int.iloc[:, 0], conf_int.iloc[:, 1],
+                           alpha=0.2, color='red', label='95% Confidence Interval')
+        except Exception:
+            # If confidence intervals are not available, continue without them
+            pass
+
+        plt.title('Fitted Model vs Actual Data Over Time')
+        plt.xlabel('Year')
+        plt.ylabel('Observed Entities')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        # Add model summary text
+        r_squared = getattr(self.model_results, 'rsquared', 'N/A')
+        aic = self.model_results.aic
+        plt.text(0.02, 0.98, f'AIC: {aic:.2f}\nPseudo R²: {r_squared}',
+                transform=plt.gca().transAxes, verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.show()
+
+    def plot_residuals_vs_fitted(self, save_path=None):
+        """
+        Plot residuals vs fitted values to check for patterns.
+
+        Parameters:
+        -----------
+        save_path : str, optional
+            Path to save the plot
+        """
+        fitted_values = self.model_results.fittedvalues
+        residuals = self.residuals
+
+        plt.figure(figsize=(10, 6))
+        plt.scatter(fitted_values, residuals, alpha=0.6)
+        plt.axhline(y=0, color='red', linestyle='--', alpha=0.8)
+        plt.xlabel('Fitted Values')
+        plt.ylabel('Pearson Residuals')
+        plt.title('Residuals vs Fitted Values')
+        plt.grid(True, alpha=0.3)
+
+        # Add a lowess smoother to show trends
+        try:
+            from statsmodels.nonparametric.smoothers_lowess import lowess
+            smoothed = lowess(residuals, fitted_values, frac=0.3)
+            plt.plot(smoothed[:, 0], smoothed[:, 1], color='orange', linewidth=2,
+                    label='LOWESS Smoother')
+            plt.legend()
+        except ImportError:
+            pass
+
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.show()
+
+    def create_diagnostic_plots(self, data, output_dir=None):
+        """
+        Create a comprehensive set of diagnostic plots.
+
+        Parameters:
+        -----------
+        data : pd.DataFrame
+            Original data
+        output_dir : str, optional
+            Directory to save plots
+        """
+        if output_dir:
+            import os
+            os.makedirs(output_dir, exist_ok=True)
+
+            # Plot fitted vs actual
+            self.plot_fitted_vs_actual(data, f"{output_dir}/fitted_vs_actual.png")
+
+            # Plot residuals vs fitted
+            self.plot_residuals_vs_fitted(f"{output_dir}/residuals_vs_fitted.png")
+
+            # Plot ACF of residuals
+            self.plot_acf_residuals(save_path=f"{output_dir}/acf_residuals.png")
+        else:
+            # Show all plots
+            self.plot_fitted_vs_actual(data)
+            self.plot_residuals_vs_fitted()
+            self.plot_acf_residuals()
+
 
 class LaggedModelFitter:
     """Class for fitting models with lagged dependent variables."""
@@ -207,6 +330,112 @@ class LaggedModelFitter:
         print("\n--- Regression Results with Lagged Dependent Variable ---")
         print(self.lagged_results.summary())
 
+    def plot_lagged_model_fit(self, save_path=None):
+        """
+        Plot fitted values of lagged model vs actual data.
+
+        Parameters:
+        -----------
+        save_path : str, optional
+            Path to save the plot
+        """
+        if self.lagged_results is None:
+            raise ValueError("Lagged model must be fitted first")
+
+        # Get data for plotting (excluding NaN values from lagging)
+        plot_data = self.lagged_data.dropna()
+        fitted_values = self.lagged_results.fittedvalues
+        actual_values = plot_data['ObservedEntities']
+        years = plot_data.index
+
+        plt.figure(figsize=(12, 8))
+
+        # Plot actual data
+        plt.plot(years, actual_values, 'o-', label='Actual Data',
+                color='blue', markersize=6, linewidth=2)
+
+        # Plot fitted values from lagged model
+        plt.plot(years, fitted_values, 's-', label='Lagged Model Fitted',
+                color='green', markersize=4, linewidth=2, alpha=0.8)
+
+        plt.title('Lagged Model: Fitted vs Actual Data Over Time')
+        plt.xlabel('Year')
+        plt.ylabel('Observed Entities')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        # Add model summary text
+        aic = self.lagged_results.aic
+        plt.text(0.02, 0.98, f'Lagged Model AIC: {aic:.2f}',
+                transform=plt.gca().transAxes, verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.8))
+
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.show()
+
+    def compare_models_plot(self, save_path=None):
+        """
+        Compare base model vs lagged model visually.
+
+        Parameters:
+        -----------
+        save_path : str, optional
+            Path to save the plot
+        """
+        if self.lagged_results is None:
+            raise ValueError("Lagged model must be fitted first")
+
+        # Get data for plotting
+        plot_data = self.lagged_data.dropna()
+
+        # Get fitted values from both models
+        base_fitted = self.base_model_results.fittedvalues
+        lagged_fitted = self.lagged_results.fittedvalues
+        actual_values = plot_data['ObservedEntities']
+        years = plot_data.index
+
+        # Align base model fitted values with lagged data
+        base_fitted_aligned = base_fitted.loc[years]
+
+        plt.figure(figsize=(14, 8))
+
+        # Plot actual data
+        plt.plot(years, actual_values, 'o-', label='Actual Data',
+                color='blue', markersize=6, linewidth=2)
+
+        # Plot base model fitted values
+        plt.plot(years, base_fitted_aligned, 's-', label='Base Model Fitted',
+                color='red', markersize=4, linewidth=2, alpha=0.7)
+
+        # Plot lagged model fitted values
+        plt.plot(years, lagged_fitted, '^-', label='Lagged Model Fitted',
+                color='green', markersize=4, linewidth=2, alpha=0.7)
+
+        plt.title('Model Comparison: Base vs Lagged Model')
+        plt.xlabel('Year')
+        plt.ylabel('Observed Entities')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        # Add comparison statistics
+        base_aic = self.base_model_results.aic
+        lagged_aic = self.lagged_results.aic
+        improvement = base_aic - lagged_aic
+
+        comparison_text = f'Base Model AIC: {base_aic:.2f}\nLagged Model AIC: {lagged_aic:.2f}\nImprovement: {improvement:.2f}'
+        plt.text(0.02, 0.98, comparison_text,
+                transform=plt.gca().transAxes, verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
+
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.show()
+
 
 def load_data(filepath):
     """Load preprocessed data from CSV file."""
@@ -229,7 +458,10 @@ if __name__ == "__main__":
         # Analyze autocorrelation
         print("=== Autocorrelation Analysis ===")
         analyzer = AutocorrelationAnalyzer(best_model)
-        analyzer.plot_acf_residuals()
+
+        # Create comprehensive diagnostic plots
+        print("Creating diagnostic plots...")
+        analyzer.create_diagnostic_plots(data)
         analyzer.print_diagnostics()
 
         # Fit lagged model if autocorrelation is detected
@@ -240,7 +472,14 @@ if __name__ == "__main__":
             lagged_fitter.fit_lagged_model(lag_periods=1)
             lagged_fitter.print_results()
 
-            print("\n=== Analyzing Lagged Model Residuals ===")
+            print("\n=== Analyzing Lagged Model ===")
+            # Plot lagged model fit
+            lagged_fitter.plot_lagged_model_fit()
+
+            # Compare models visually
+            lagged_fitter.compare_models_plot()
+
+            # Analyze lagged model residuals
             lagged_fitter.analyze_lagged_residuals()
 
     except (FileNotFoundError, ImportError) as e:
