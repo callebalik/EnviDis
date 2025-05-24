@@ -221,67 +221,152 @@ class TrendDetector:
 
     def _visualize_trends(self):
         """Create visualizations of detected trends."""
-        plt.figure(figsize=(15, 10))
+        # Calculate normalized entities for comparison
+        normalized_entities = (self.data['ObservedEntities'] / self.data['TotalDocuments']) * 1000
 
-        # Plot 1: Original data with fitted trend
-        plt.subplot(2, 2, 1)
-        plt.scatter(self.data.index, self.data['ObservedEntities'], alpha=0.6, label='Observed Data')
-        plt.plot(self.data.index, self.best_model.fittedvalues, 'r-', linewidth=2, label='Fitted Trend')
+        plt.figure(figsize=(18, 12))
+
+        # Plot 1: Original data with fitted trend and document histogram
+        plt.subplot(3, 2, 1)
+        ax1 = plt.gca()
+        ax1_hist = ax1.twinx()
+
+        # Main trend line
+        ax1.scatter(self.data.index, self.data['ObservedEntities'], alpha=0.6, color='blue', label='Observed Data')
+        ax1.plot(self.data.index, self.best_model.fittedvalues, 'r-', linewidth=2, label='Fitted Trend')
+        ax1.set_xlabel('Year')
+        ax1.set_ylabel('Observed Entities', color='blue')
+        ax1.tick_params(axis='y', labelcolor='blue')
+        ax1.grid(True, alpha=0.3)
+
+        # Document histogram overlay
+        ax1_hist.bar(self.data.index, self.data['TotalDocuments'], alpha=0.3, color='orange',
+                     width=0.8, label='Total Documents')
+        ax1_hist.set_ylabel('Total Documents', color='orange')
+        ax1_hist.tick_params(axis='y', labelcolor='orange')
+
+        # Combined legend
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax1_hist.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+
+        ax1.set_title(f'Absolute Trend: {self.trend_fitter.compare_all_models()["best_overall"].title()} Model')
+
+        # Plot 2: Normalized entities trends
+        plt.subplot(3, 2, 2)
+        # Fit the same model type to normalized data
+        normalized_data = self.data.copy()
+        normalized_data['ObservedEntities'] = normalized_entities
+
+        # Create a new trend fitter for normalized data
+        from trend_modeling import TrendModelFitter
+        normalized_fitter = TrendModelFitter(normalized_data, self.trend_fitter.base_family)
+
+        # Fit the same model type as the best absolute model
+        best_model_name = self.trend_fitter.compare_all_models()["best_overall"]
+        if best_model_name == 'linear':
+            normalized_results = normalized_fitter.fit_linear_model()
+        elif best_model_name == 'quadratic':
+            normalized_results = normalized_fitter.fit_quadratic_model()
+        elif best_model_name == 'cubic':
+            normalized_results = normalized_fitter.fit_cubic_model()
+        else:  # spline
+            normalized_results = normalized_fitter.fit_spline_model()
+
+        plt.scatter(self.data.index, normalized_entities, alpha=0.6, color='green', label='Normalized Data')
+        plt.plot(self.data.index, normalized_results.fittedvalues, 'purple', linewidth=2, label='Fitted Normalized Trend')
         plt.xlabel('Year')
-        plt.ylabel('Observed Entities')
-        plt.title(f'Trend Analysis: {self.trend_fitter.compare_all_models()["best_overall"].title()} Model')
+        plt.ylabel('Entities per 1000 Documents')
+        plt.title(f'Normalized Trend: {best_model_name.title()} Model')
         plt.legend()
         plt.grid(True, alpha=0.3)
 
-        # Plot 2: Residuals vs time
-        plt.subplot(2, 2, 2)
-        plt.scatter(self.data.index, self.best_model.resid_pearson, alpha=0.6)
+        # Plot 3: Residuals vs time for absolute model
+        plt.subplot(3, 2, 3)
+        plt.scatter(self.data.index, self.best_model.resid_pearson, alpha=0.6, color='blue')
         plt.axhline(y=0, color='r', linestyle='--')
         plt.xlabel('Year')
         plt.ylabel('Standardized Residuals')
-        plt.title('Residuals Over Time')
+        plt.title('Absolute Model Residuals Over Time')
         plt.grid(True, alpha=0.3)
 
-        # Plot 3: Model comparison (AIC)
-        plt.subplot(2, 2, 3)
+        # Plot 4: Residuals vs time for normalized model
+        plt.subplot(3, 2, 4)
+        plt.scatter(self.data.index, normalized_results.resid_pearson, alpha=0.6, color='green')
+        plt.axhline(y=0, color='r', linestyle='--')
+        plt.xlabel('Year')
+        plt.ylabel('Standardized Residuals')
+        plt.title('Normalized Model Residuals Over Time')
+        plt.grid(True, alpha=0.3)
+
+        # Plot 5: Model comparison (AIC) for both absolute and normalized
+        plt.subplot(3, 2, 5)
         models = ['linear', 'quadratic', 'cubic']
-        aics = [
+        aics_abs = [
             self.trend_fitter.linear_results.aic if self.trend_fitter.linear_results else np.nan,
             self.trend_fitter.poly2_results.aic if self.trend_fitter.poly2_results else np.nan,
             self.trend_fitter.poly3_results.aic if self.trend_fitter.poly3_results else np.nan
         ]
+
+        # Fit all models for normalized data for comparison
+        normalized_fitter.fit_all_models()
+        aics_norm = [
+            normalized_fitter.linear_results.aic if normalized_fitter.linear_results else np.nan,
+            normalized_fitter.poly2_results.aic if normalized_fitter.poly2_results else np.nan,
+            normalized_fitter.poly3_results.aic if normalized_fitter.poly3_results else np.nan
+        ]
+
         if self.trend_fitter.spline_results:
             models.append('spline')
-            aics.append(self.trend_fitter.spline_results.aic)
+            aics_abs.append(self.trend_fitter.spline_results.aic)
+            aics_norm.append(normalized_fitter.spline_results.aic if normalized_fitter.spline_results else np.nan)
 
-        colors = ['red' if model == self.trend_fitter.compare_all_models()['best_overall'] else 'blue' for model in models]
-        plt.bar(models, aics, color=colors, alpha=0.7)
+        x = np.arange(len(models))
+        width = 0.35
+
+        plt.bar(x - width/2, aics_abs, width, label='Absolute', alpha=0.7, color='blue')
+        plt.bar(x + width/2, aics_norm, width, label='Normalized', alpha=0.7, color='green')
         plt.ylabel('AIC')
-        plt.title('Model Comparison (Lower AIC = Better)')
-        plt.xticks(rotation=45)
+        plt.title('Model Comparison: Absolute vs Normalized')
+        plt.xticks(x, models, rotation=45)
+        plt.legend()
+        plt.grid(True, alpha=0.3, axis='y')
 
-        # Plot 4: Trend component only
-        plt.subplot(2, 2, 4)
-        # Predict with and without time component to isolate trend
-        time_data = self.data.copy()
-        no_time_data = self.data.copy()
-        no_time_data['Year_scaled'] = 0  # Set time to baseline
+        # Plot 6: Trend comparison (absolute vs normalized effects)
+        plt.subplot(3, 2, 6)
 
-        if 'I(Year_scaled ** 2)' in self.best_model.params.index:
-            no_time_data['I(Year_scaled ** 2)'] = 0
-        if 'I(Year_scaled ** 3)' in self.best_model.params.index:
-            no_time_data['I(Year_scaled ** 3)'] = 0
+        # Absolute trend effect (relative to mean)
+        abs_trend_effect = self.best_model.fittedvalues - np.mean(self.best_model.fittedvalues)
+        norm_trend_effect = normalized_results.fittedvalues - np.mean(normalized_results.fittedvalues)
 
-        trend_effect = self.best_model.fittedvalues - np.mean(self.best_model.fittedvalues)
-        plt.plot(self.data.index, trend_effect, 'g-', linewidth=2)
+        plt.plot(self.data.index, abs_trend_effect, 'b-', linewidth=2, label='Absolute Trend Effect')
+        plt.plot(self.data.index, norm_trend_effect, 'g-', linewidth=2, label='Normalized Trend Effect')
         plt.axhline(y=0, color='k', linestyle='--', alpha=0.5)
         plt.xlabel('Year')
         plt.ylabel('Trend Effect (Relative to Mean)')
-        plt.title('Isolated Temporal Trend')
+        plt.title('Isolated Temporal Trends Comparison')
+        plt.legend()
         plt.grid(True, alpha=0.3)
 
         plt.tight_layout()
         plt.show()
+
+        # Print comparison summary
+        print(f"\n{'='*60}")
+        print("TREND COMPARISON SUMMARY")
+        print(f"{'='*60}")
+        print(f"Absolute model AIC: {self.best_model.aic:.2f}")
+        print(f"Normalized model AIC: {normalized_results.aic:.2f}")
+
+        if normalized_results.aic < self.best_model.aic:
+            print("✓ Normalized model provides better fit (lower AIC)")
+        else:
+            print("✓ Absolute model provides better fit (lower AIC)")
+
+        print(f"\nAbsolute model R²: {1 - (self.best_model.deviance / self.best_model.null_deviance):.4f}")
+        print(f"Normalized model R²: {1 - (normalized_results.deviance / normalized_results.null_deviance):.4f}")
+
+        return normalized_results
 
 
 def demo_trend_detection():

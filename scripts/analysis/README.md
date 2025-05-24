@@ -2,6 +2,76 @@
 
 This directory contains a modular time series analysis framework that has been split from the original monolithic script `1.py`. The framework provides comprehensive tools for analyzing count data with potential non-monotonic trends and autocorrelation.
 
+## Summary of Hypothesis Tests
+| Test Type                | Null Hypothesis         | Method                | Script/Location              |
+|--------------------------|------------------------|-----------------------|------------------------------|
+| Coefficient significance | β = 0                  | t-test / z-test       | All GLM models               |
+| Overall trend            | No time effect         | Likelihood ratio      | `trend_modeling.py`          |
+| Autocorrelation          | No serial correlation  | Durbin-Watson         | `autocorrelation_analysis.py`|
+| Overdispersion           | Var = Mean             | Deviance / DF         | `basic_model_fitting.py`     |
+| Model adequacy           | Simpler model OK       | AIC comparison        | All comparison functions     |
+| Trend shape              | Linear sufficient      | Nested F-tests        | `trend_modeling.py`          |
+
+## Model Selection Criteria Explained
+
+### AIC (Akaike Information Criterion)
+**AIC** balances model fit against complexity:
+```
+AIC = -2 * log(likelihood) + 2 * k
+```
+- `log(likelihood)` = how well the model fits the data
+- `k` = number of parameters in the model
+- **Lower AIC = Better model**
+- **Purpose**: Prevents overfitting by penalizing models with too many parameters
+
+**In the framework**:
+```python
+comparison = trend_fitter.compare_all_models()
+print(f"Linear AIC: {linear.aic:.2f}")
+print(f"Quadratic AIC: {quadratic.aic:.2f}")
+print(f"Best model: {comparison['best_overall']}")  # Lowest AIC wins
+```
+
+### BIC (Bayesian Information Criterion)
+**BIC** is similar to AIC but penalizes complexity more heavily:
+```
+BIC = -2 * log(likelihood) + k * log(n)
+```
+- `n` = sample size
+- **Lower BIC = Better model**
+- **More conservative** than AIC (prefers simpler models)
+
+### R² and Pseudo R² for Model Fit Assessment
+
+#### Standard R² (Coefficient of Determination)
+```
+R² = 1 - (SSres / SStot)
+```
+- **Range**: 0 to 1 (higher = better fit)
+- **R² = 0.8** means "80% of variance is explained"
+
+#### Pseudo R² for GLM Models
+Since the framework uses GLM (not linear regression), it calculates **Pseudo R²**:
+```python
+def _assess_trend_significance(self, model_name):
+    # Effect size (R-squared equivalent for GLM)
+    null_deviance = null_fitted.deviance
+    model_deviance = self.best_model.deviance
+    pseudo_r2 = (null_deviance - model_deviance) / null_deviance
+
+    print(f"  - Pseudo R²: {pseudo_r2:.4f}")
+    print(f"  - Time explains {pseudo_r2*100:.1f}% of additional deviance")
+```
+
+### Comparison Table
+
+| Metric | Purpose | Range | Interpretation | When to Use |
+|--------|---------|-------|----------------|-------------|
+| **AIC** | Model selection | Any value | Lower = better | Choose between different models |
+| **BIC** | Model selection (conservative) | Any value | Lower = better | When you prefer simpler models |
+| **R²** | Variance explained | 0 to 1 | Higher = better | Understand model explanatory power |
+| **Pseudo R²** | GLM variance explained | 0 to 1 | Higher = better | GLM equivalent of R² |
+
 ## Scripts Overview
 
 ### 1. `data_generation.py`
@@ -264,4 +334,10 @@ This modular approach provides:
 - **Extensibility**: New modeling approaches can be added easily
 - **Collaboration**: Multiple developers can work on different components
 
-##
+## Acknowledgements
+
+This framework is built upon the foundational work of numerous researchers and developers in the fields of statistics, data science, and software engineering. Special thanks to the creators of the `statsmodels`, `pandas`, `numpy`, `matplotlib`, and `seaborn` libraries, which provide the essential tools and functionalities that make this analysis possible. Their dedication to open-source software has greatly accelerated research and development efforts across various scientific disciplines.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

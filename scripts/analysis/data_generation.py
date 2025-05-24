@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 # Module-level constants for data generation types
-DATA_GENERATION_TYPE = "non_constant_upward"  # Options: "constant_upward", "non_constant_upward"
+DATA_GENERATION_TYPE = "constant_upward"  # Options: "constant_upward", "non_constant_upward"
 
 GENERATION_TYPES = {
     "constant_upward": "Constant upward trend",
