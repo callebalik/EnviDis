@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from config_loader import cfg
+from envidis.config_loader import cfg
 
 # Defines an ontology class that can be used for loading ontologies in other scripts, e.g. the Envo ontology from the raw data dir can then be called with dot notation
 #  from ontologies_loader import envo

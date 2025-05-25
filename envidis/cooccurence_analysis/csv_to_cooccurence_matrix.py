@@ -1,7 +1,9 @@
+from typing import List, Optional
+
 import pandas as pd
-from config_loader import cfg
-from typing import Optional, List
-from scipy.cluster.hierarchy import linkage, leaves_list
+from scipy.cluster.hierarchy import leaves_list, linkage
+
+from envidis.config_loader import cfg
 
 
 def read_csv(input_filepath: str) -> pd.DataFrame:
@@ -11,8 +13,8 @@ def read_csv(input_filepath: str) -> pd.DataFrame:
 
 def create_cooccurrence_matrix(
     df: pd.DataFrame,
-    limit_rows: Optional[int] = None,
-    limit_columns: Optional[int] = None,
+    limit_rows: int | None = None,
+    limit_columns: int | None = None,
     lowercase: bool = False,
 ) -> pd.DataFrame:
 
@@ -25,7 +27,9 @@ def create_cooccurrence_matrix(
 
     # Create a pivot table to form the co-occurrence matrix
     cooccurrence_matrix = df_aggregated.pivot(
-        index="entity_2", columns="entity_1", values="fq"
+        index="entity_2",
+        columns="entity_1",
+        values="fq",
     ).fillna(0)
 
     # Ensure the position (0,0) is not populated by the header
@@ -54,7 +58,7 @@ def filter_frequency(df: pd.DataFrame, percentile: float = 0.0) -> pd.DataFrame:
 
     threshold = df["fq"].quantile(percentile)
     print(
-        f"Filtering frequencies below the {percentile * 100}th percentile = cooccurence strength of ({threshold})"
+        f"Filtering frequencies below the {percentile * 100}th percentile = cooccurence strength of ({threshold})",
     )
 
     # Filter the frequencies
@@ -66,8 +70,8 @@ def filter_frequency(df: pd.DataFrame, percentile: float = 0.0) -> pd.DataFrame:
 
 def filter_rows_columns(
     matrix: pd.DataFrame,
-    row_filters: Optional[List[str]] = None,
-    column_filters: Optional[List[str]] = None,
+    row_filters: list[str] | None = None,
+    column_filters: list[str] | None = None,
 ) -> pd.DataFrame:
     if row_filters:
         for row_filter in row_filters:
@@ -142,7 +146,10 @@ if __name__ == "__main__":
     disease_ecluded = diseases_misslabelled + diseases_amibgous
 
     cooccurrence_matrix = create_cooccurrence_matrix(
-        df, limit_rows, limit_columns, lowercase=True
+        df,
+        limit_rows,
+        limit_columns,
+        lowercase=True,
     )
     cooccurrence_matrix = filter_rows_columns(
         cooccurrence_matrix,

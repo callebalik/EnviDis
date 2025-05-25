@@ -6,12 +6,11 @@ from pathlib import Path
 import pandas as pd
 
 # Add the project root to the system path
-from config_loader import config
+from envidis.config_loader import config
 
 
 def get_all_terms_and_synonyms_df(df):
-    """
-    Create a new DataFrame where terms and their corresponding synonyms are placed in separate rows.
+    """Create a new DataFrame where terms and their corresponding synonyms are placed in separate rows.
 
     The input DataFrame should contain two columns: 'term' and 'synonyms'. For each row, the 'term' is added as a new row in the resulting DataFrame. The 'synonyms' column (if it contains a valid string) is split by either a semicolon (';') or a comma (','), and each synonym is added as a separate row in the resulting DataFrame. Leading and trailing whitespace is removed from both terms and synonyms.
 
@@ -19,15 +18,15 @@ def get_all_terms_and_synonyms_df(df):
     - 'entity': Contains either the term or a synonym.
     - 'type': A label indicating whether the 'entity' is a 'term' or a 'synonym'.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     df : pandas.DataFrame
         The input DataFrame containing terms and their synonyms. It must have at least two columns:
         - 'term': The primary term.
         - 'synonyms': A string containing one or more synonyms, separated by commas or semicolons.
 
-    Returns:
-    --------
+    Returns
+    -------
     all_entities_df : pandas.DataFrame
         A DataFrame with two columns:
         - 'entity': Contains either a term or a synonym.
@@ -52,13 +51,13 @@ def get_all_terms_and_synonyms_df(df):
         | Citrus     | synonym |
         | Juice      | synonym |
 
-    Notes:
-    ------
+    Notes
+    -----
     - Synonyms are split by semicolons (;) or commas (,).
     - Whitespace around terms and synonyms is removed.
     - Empty or invalid 'synonyms' entries are ignored.
-    """
 
+    """
     # List to store the rows of the new DataFrame
     rows = []
 
@@ -86,16 +85,19 @@ def get_all_terms_and_synonyms_df(df):
 
 # Function to export one column of a DataFrame to a .txt file and verify the newline count
 def export_column_to_txt(
-    df, column_name, output_dir: str, filename: str, dictionary_name: str = ""
-):
-    """
-    Export a single column of a DataFrame to a .txt file.
+    df,
+    column_name,
+    output_dir: str,
+    filename: str,
+    dictionary_name: str = "",
+) -> None:
+    """Export a single column of a DataFrame to a .txt file.
 
     Each row of the specified column will be written as a new line in the output file.
     Ensures that the number of newlines matches the number of non-NaN rows in the column.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     df : pandas.DataFrame
         The input DataFrame containing the column to export.
 
@@ -105,13 +107,15 @@ def export_column_to_txt(
     filename : str
         The path to the .txt file where the column data will be written.
 
-    Raises:
-    -------
+    Raises
+    ------
     ValueError : If the number of newlines in the output file does not match the expected count.
+
     """
     # Ensure the column exists in the DataFrame
     if column_name not in df.columns:
-        raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
+        msg = f"Column '{column_name}' does not exist in the DataFrame."
+        raise ValueError(msg)
 
     # Drop NaN values and convert to a list
     lines = df[column_name].dropna().astype(str).tolist()
@@ -122,7 +126,7 @@ def export_column_to_txt(
         f.write("\n".join(lines))
 
     # Read the file back and count the number of lines
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         file_lines = f.readlines()
 
     # Verify the number of lines in the file matches the number of non-NaN rows in the column
@@ -130,10 +134,11 @@ def export_column_to_txt(
     actual_line_count = len(file_lines)
 
     if actual_line_count != expected_line_count:
+        msg = f"Expected {expected_line_count} lines in the file but found {actual_line_count}."
         raise ValueError(
-            f"Expected {expected_line_count} lines in the file but found {actual_line_count}."
+            msg,
         )
 
     print(
-        f"Column '{column_name}' successfully exported to {file_path} with {actual_line_count} lines."
+        f"Column '{column_name}' successfully exported to {file_path} with {actual_line_count} lines.",
     )
