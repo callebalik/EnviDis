@@ -8,6 +8,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 
+
 class BasicModelFitter:
     """Class for fitting and comparing basic regression models."""
 
