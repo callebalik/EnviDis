@@ -6,13 +6,17 @@ This script tests each component individually to ensure they work correctly.
 import sys
 
 # Add the analysis directory to Python path
-sys.path.append('/home/callebalik/EnviDis/scripts/analysis')
+sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
+
 
 def test_data_generation():
     """Test data generation functionality."""
     print("Testing data generation...")
     try:
-        from data_generation import generate_sample_data
+        from scripts.analysis.time_series_analysis.demo.demo_data_generation import (
+            generate_sample_data,
+        )
+
         data = generate_sample_data(start_year=2020, end_year=2024, seed=123)
         print(f"✓ Data generation successful. Shape: {data.shape}")
         print(f"✓ Columns: {list(data.columns)}")
@@ -21,11 +25,14 @@ def test_data_generation():
         print(f"✗ Data generation failed: {e}")
         return False
 
+
 def test_basic_model_fitting():
     """Test basic model fitting functionality."""
     print("\nTesting basic model fitting...")
     try:
-        from data_generation import generate_sample_data
+        from scripts.analysis.time_series_analysis.demo.demo_data_generation import (
+            generate_sample_data,
+        )
         from basic_model_fitting import BasicModelFitter
 
         data = generate_sample_data(start_year=2020, end_year=2024, seed=123)
@@ -51,11 +58,14 @@ def test_basic_model_fitting():
         print(f"✗ Basic model fitting failed: {e}")
         return False
 
+
 def test_trend_modeling():
     """Test trend modeling functionality."""
     print("\nTesting trend modeling...")
     try:
-        from data_generation import generate_sample_data
+        from scripts.analysis.time_series_analysis.demo.demo_data_generation import (
+            generate_sample_data,
+        )
         from trend_modeling import TrendModelFitter
 
         data = generate_sample_data(start_year=2020, end_year=2024, seed=123)
@@ -83,11 +93,14 @@ def test_trend_modeling():
         print(f"✗ Trend modeling failed: {e}")
         return False
 
+
 def test_autocorrelation_analysis():
     """Test autocorrelation analysis functionality."""
     print("\nTesting autocorrelation analysis...")
     try:
-        from data_generation import generate_sample_data
+        from scripts.analysis.time_series_analysis.demo.demo_data_generation import (
+            generate_sample_data,
+        )
         from trend_modeling import TrendModelFitter
         from autocorrelation_analysis import AutocorrelationAnalyzer
 
@@ -111,6 +124,7 @@ def test_autocorrelation_analysis():
         print(f"✗ Autocorrelation analysis failed: {e}")
         return False
 
+
 def run_all_tests():
     """Run all component tests."""
     print("=" * 60)
@@ -121,7 +135,7 @@ def run_all_tests():
         test_data_generation,
         test_basic_model_fitting,
         test_trend_modeling,
-        test_autocorrelation_analysis
+        test_autocorrelation_analysis,
     ]
 
     results = []
@@ -143,6 +157,7 @@ def run_all_tests():
         print("✗ Some tests failed. Please check the error messages above.")
 
     return passed == total
+
 
 if __name__ == "__main__":
     success = run_all_tests()

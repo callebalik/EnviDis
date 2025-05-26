@@ -8,11 +8,14 @@ import sys
 import os
 
 # Add the analysis directory to Python path
-sys.path.append('/home/callebalik/EnviDis/scripts/analysis')
+sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
 
-from data_generation import generate_sample_data
+from scripts.analysis.time_series_analysis.demo.demo_data_generation import (
+    generate_sample_data,
+)
 from basic_model_fitting import BasicModelFitter
 from autocorrelation_analysis import AutocorrelationAnalyzer, LaggedModelFitter
+
 
 def demo_model_plotting():
     """Demonstrate the new plotting functionality."""
@@ -49,7 +52,7 @@ def demo_model_plotting():
     dw_results = analyzer.durbin_watson_test()
     print(f"\nDurbin-Watson test: {dw_results['interpretation']}")
 
-    if dw_results['significant_autocorrelation']:
+    if dw_results["significant_autocorrelation"]:
         print("\nFitting lagged model...")
         lagged_fitter = LaggedModelFitter(data, model_results)
         lagged_results = lagged_fitter.fit_lagged_model(lag_periods=1)
@@ -66,6 +69,7 @@ def demo_model_plotting():
     print("\n" + "=" * 60)
     print("Demo completed! All plots should have been displayed.")
     print("=" * 60)
+
 
 def demo_batch_plotting():
     """Demonstrate batch plotting with output directory."""
@@ -89,8 +93,9 @@ def demo_batch_plotting():
     print(f"\nPlots saved to: {output_dir}")
     print("Files created:")
     for file in os.listdir(output_dir):
-        if file.endswith('.png'):
+        if file.endswith(".png"):
             print(f"  - {file}")
+
 
 if __name__ == "__main__":
     try:
@@ -103,4 +108,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error during demo: {e}")
         import traceback
+
         traceback.print_exc()
