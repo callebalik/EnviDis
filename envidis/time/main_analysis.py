@@ -3,6 +3,7 @@ This script orchestrates the complete time series analysis pipeline.
 """
 
 import os
+from typing import Any
 
 import pandas as pd
 
@@ -35,10 +36,10 @@ class TimeSeriesAnalysisPipeline:
         """
         self.data_path = data_path
         self.output_dir = output_dir or "/home/callebalik/EnviDis/results/analysis"
-        self.data = None
-        self.basic_fitter = None
-        self.trend_fitter = None
-        self.best_model = None
+        self.data: pd.DataFrame = pd.DataFrame()
+        self.basic_fitter: BasicModelFitter | None = None
+        self.trend_fitter: TrendModelFitter | None = None
+        self.best_model: Any | None = None
 
         # Create output directory
         os.makedirs(self.output_dir, exist_ok=True)

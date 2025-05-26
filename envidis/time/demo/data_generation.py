@@ -33,7 +33,12 @@ def generate_non_constant_upward_trend(years, start_year):
     return np.maximum(10, trend)
 
 
-def generate_sample_data(start_year=1970, end_year=2024, seed=42, generation_type=None):
+def generate_sample_data(
+    start_year: int = 1970,
+    end_year: int = 2024,
+    seed: int = 42,
+    generation_type: str | None = None,
+) -> pd.DataFrame:
     """Generate sample time series data for analysis.
 
     Parameters
