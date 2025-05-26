@@ -22,297 +22,175 @@ YEAR_LABEL_INTERVAL = 5  # Interval in years between x-axis labels for datetime 
 DATE_FORMAT = "%Y"  # Date format for x-axis labels
 ENABLE_YEAR_LOCATOR = True  # Whether to use YearLocator for datetime x-axis
 
-
-def plot_entities_over_time(data, save_path=None) -> None:
-    """Plot observed entities over time.
-
-    Parameters
-    ----------
-    data : pd.DataFrame
-        DataFrame with Date/Year as index and co_count column
-    save_path : str, optional
-        Path to save the plot
-
-    """
-    plt.figure(figsize=(12, 6))
-
-    # For daily data, sample for readability
-    if len(data) > DAILY_DATA_THRESHOLD:
-        sample_data = data.iloc[::DAILY_SAMPLING_INTERVAL]  # Sample every N points
-        sns.lineplot(
-            x=sample_data.index,
-            y="co_count",
-            data=sample_data,
-            marker="o",
-        )
-        plt.title("Observed Entities Over Time (Sampled)")
-    else:
-        sns.lineplot(x=data.index, y="co_count", data=data, marker="o")
-        plt.title("Observed Entities Over Time")
-
-    # Handle datetime vs numeric index
-    if hasattr(data.index, "year"):
-        plt.xlabel("Date")
-        if ENABLE_YEAR_LOCATOR:
-            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
-            plt.gca().xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
-        plt.xticks(rotation=45)
-    else:
-        plt.xlabel("Time Period")
-
-    plt.ylabel("Number of Observed Entities")
-    plt.grid(True)
-
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.show()
+# Plot display control
+SHOW_PLOTS = False  # Whether to display plots with plt.show()
 
 
-def plot_entities_with_documents_histogram(data, save_path=None) -> None:
-    """Plot observed entities over time with total documents histogram.
+def plot_entities_over_time(data: pd.DataFrame, save_path: str | None = None) -> None:
+    """Plot entities over time with standardized x-axis formatting."""
+    fig, ax = plt.subplots(figsize=(12, 6))
 
-    Parameters
-    ----------
-    data : pd.DataFrame
-        DataFrame with Date/Year as index, co_count and document_count columns
-    save_path : str, optional
-        Path to save the plot
+    ax.plot(data.index, data["co_count"], linewidth=2, alpha=0.8)
+    ax.set_title("Entities Over Time", fontsize=14, fontweight="bold")
+    ax.set_ylabel("Entity Count", fontsize=12)
+    ax.set_xlabel("Year", fontsize=12)
 
-    """
-    # For daily data, aggregate to monthly for better visualization
-    if len(data) > MONTHLY_AGGREGATION_THRESHOLD and hasattr(data.index, "year"):
-        plot_data = data.resample("M").sum()
-        title_suffix = " (Monthly Aggregated)"
-    else:
-        plot_data = data
-        title_suffix = ""
+    # Standardized x-axis formatting - every 5 years with yearly ticks
+    ax.xaxis.set_major_locator(mdates.YearLocator(5))  # Major ticks every 5 years
+    ax.xaxis.set_minor_locator(mdates.YearLocator(1))  # Minor ticks every year
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), height_ratios=[2, 1])
+    # Rotate labels for better readability
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
 
-    # Main plot: Entities over time
-    ax1.plot(
-        plot_data.index,
-        plot_data["co_count"],
-        marker="o",
-        linewidth=2,
-        markersize=6,
-        label="Observed Entities",
-    )
-    ax1.set_ylabel("Number of Observed Entities", fontsize=12)
-    ax1.set_title(
-        f"Observed Entities Over Time with Document Volume Context{title_suffix}",
-        fontsize=14,
-        fontweight="bold",
-    )
-    ax1.grid(True, alpha=0.3)
-    ax1.legend()
-
-    # Histogram: Total documents distribution over time
-    width = 0.8 if len(plot_data) < 100 else 20  # Adjust bar width for daily data
-    ax2.bar(
-        plot_data.index,
-        plot_data["document_count"],
-        alpha=0.7,
-        color="orange",
-        width=width,
-    )
-    ax2.set_ylabel("Total Documents", fontsize=12)
-    ax2.set_title(f"Total Documents Volume{title_suffix}", fontsize=12)
-    ax2.grid(True, alpha=0.3, axis="y")
-
-    # Handle datetime formatting
-    if hasattr(plot_data.index, "year"):
-        if ENABLE_YEAR_LOCATOR:
-            ax1.xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
-            ax1.xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
-            ax2.xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
-            ax2.xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
-        ax1.tick_params(axis="x", rotation=45)
-        ax2.tick_params(axis="x", rotation=45)
-        ax2.set_xlabel("Date", fontsize=12)
-    else:
-        # Format x-axis to show fewer ticks if too many points
-        if len(plot_data.index) > MAX_XTICKS_DISPLAY:
-            step = max(1, len(plot_data.index) // XTICK_STEP_DIVISOR)
-            ax1.set_xticks(plot_data.index[::step])
-            ax2.set_xticks(plot_data.index[::step])
-            ax1.tick_params(axis="x", rotation=45)
-            ax2.tick_params(axis="x", rotation=45)
-        ax2.set_xlabel("Time Period", fontsize=12)
+    # Add grid for better readability
+    ax.grid(True, alpha=0.3, which="major")
+    ax.grid(True, alpha=0.1, which="minor")
 
     plt.tight_layout()
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.show()
+
+    if SHOW_PLOTS:
+        plt.show()
+
+    plt.close()
+
+
+def plot_entities_with_documents_histogram(
+    data: pd.DataFrame,
+    save_path: str | None = None,
+) -> None:
+    """Plot entities with documents histogram with standardized x-axis formatting."""
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+
+    # Entities over time
+    ax1.plot(data.index, data["co_count"], linewidth=2, alpha=0.8, label="Entities")
+    ax1.set_title("Entities Over Time", fontsize=14, fontweight="bold")
+    ax1.set_ylabel("Entity Count", fontsize=12)
+    ax1.legend()
+
+    # Standardized x-axis formatting
+    ax1.xaxis.set_major_locator(mdates.YearLocator(5))
+    ax1.xaxis.set_minor_locator(mdates.YearLocator(1))
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
+    ax1.grid(True, alpha=0.3, which="major")
+    ax1.grid(True, alpha=0.1, which="minor")
+
+    # Documents over time
+    ax2.bar(data.index, data["document_count"], alpha=0.6, label="Documents")
+    ax2.set_title("Documents Over Time", fontsize=14, fontweight="bold")
+    ax2.set_ylabel("Document Count", fontsize=12)
+    ax2.set_xlabel("Year", fontsize=12)
+    ax2.legend()
+
+    # Standardized x-axis formatting
+    ax2.xaxis.set_major_locator(mdates.YearLocator(5))
+    ax2.xaxis.set_minor_locator(mdates.YearLocator(1))
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
+    ax2.grid(True, alpha=0.3, which="major")
+    ax2.grid(True, alpha=0.1, which="minor")
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+
+    if SHOW_PLOTS:
+        plt.show()
+
+    plt.close()
 
 
 def plot_entities_normalized_and_absolute(data, save_path=None):
-    """Plot both absolute entities and entities normalized by total documents.
+    """Plot normalized and absolute entities with standardized x-axis formatting."""
+    fig, ax = plt.subplots(figsize=(12, 6))
 
-    Parameters
-    ----------
-    data : pd.DataFrame
-        DataFrame with Date/Year as index, co_count and document_count columns
-    save_path : str, optional
-        Path to save the plot
-
-    """
-    # For daily data, aggregate to monthly for better visualization
-    if len(data) > MONTHLY_AGGREGATION_THRESHOLD and hasattr(data.index, "year"):
-        plot_data = data.resample("M").sum()
-        title_suffix = " (Monthly Aggregated)"
-    else:
-        plot_data = data.copy()
-        title_suffix = ""
-
-    # Calculate normalized entities (entities per document * 1000 for readability)
-    data_with_normalized = plot_data.copy()
-    data_with_normalized["NormalizedEntities"] = (
-        plot_data["co_count"] / plot_data["document_count"]
-    ) * 1000
-
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
-
-    # Top plot: Absolute entities with document histogram
-    ax1_hist = ax1.twinx()
-
-    # Line plot for entities
-    ax1.plot(
-        plot_data.index,
-        plot_data["co_count"],
-        marker="o",
+    # Absolute counts
+    ax.plot(
+        data.index,
+        data["co_count"],
         linewidth=2,
-        markersize=6,
+        alpha=0.8,
+        label="Absolute Counts",
         color="blue",
-        label="Observed Entities",
     )
-    ax1.set_ylabel("Number of Observed Entities", color="blue", fontsize=12)
-    ax1.tick_params(axis="y", labelcolor="blue")
-    ax1.set_title(
-        f"Absolute Entities vs Document Volume{title_suffix}",
-        fontsize=14,
-        fontweight="bold",
-    )
-    ax1.grid(True, alpha=0.3)
 
-    # Bar plot for documents
-    width = 0.8 if len(plot_data) < 100 else 20
-    ax1_hist.bar(
-        plot_data.index,
-        plot_data["document_count"],
-        alpha=0.3,
-        color="orange",
-        width=width,
-        label="Total Documents",
-    )
-    ax1_hist.set_ylabel("Total Documents", color="orange", fontsize=12)
-    ax1_hist.tick_params(axis="y", labelcolor="orange")
-
-    # Combine legends
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax1_hist.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
-
-    # Bottom plot: Normalized entities
+    # Normalized counts (per 1000 documents)
+    ax2 = ax.twinx()
+    normalized = (data["co_count"] / data["document_count"]) * 1000
     ax2.plot(
-        plot_data.index,
-        data_with_normalized["NormalizedEntities"],
-        marker="s",
+        data.index,
+        normalized,
         linewidth=2,
-        markersize=6,
-        color="green",
-        label="Entities per 1000 Documents",
+        alpha=0.8,
+        label="Per 1K Documents",
+        color="red",
+        linestyle="--",
     )
-    ax2.set_ylabel("Entities per 1000 Documents", color="green", fontsize=12)
-    ax2.set_title(
-        f"Document-Normalized Entity Trends{title_suffix}",
-        fontsize=14,
-        fontweight="bold",
-    )
-    ax2.grid(True, alpha=0.3)
-    ax2.legend()
-    ax2.tick_params(axis="y", labelcolor="green")
 
-    # Handle datetime formatting
-    if hasattr(plot_data.index, "year"):
-        if ENABLE_YEAR_LOCATOR:
-            ax1.xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
-            ax1.xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
-            ax2.xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
-            ax2.xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
-        ax1.tick_params(axis="x", rotation=45)
-        ax2.tick_params(axis="x", rotation=45)
-        ax2.set_xlabel("Date", fontsize=12)
-    else:
-        # Format x-axis
-        if len(plot_data.index) > MAX_XTICKS_DISPLAY:
-            step = max(1, len(plot_data.index) // XTICK_STEP_DIVISOR)
-            ax1.set_xticks(plot_data.index[::step])
-            ax2.set_xticks(plot_data.index[::step])
-            ax1.tick_params(axis="x", rotation=45)
-            ax2.tick_params(axis="x", rotation=45)
-        ax2.set_xlabel("Time Period", fontsize=12)
+    ax.set_title("Absolute vs Normalized Entity Counts", fontsize=14, fontweight="bold")
+    ax.set_ylabel("Absolute Counts", color="blue", fontsize=12)
+    ax2.set_ylabel("Entities per 1K Documents", color="red", fontsize=12)
+    ax.set_xlabel("Year", fontsize=12)
+
+    # Standardized x-axis formatting
+    ax.xaxis.set_major_locator(mdates.YearLocator(5))
+    ax.xaxis.set_minor_locator(mdates.YearLocator(1))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+    ax.grid(True, alpha=0.3, which="major")
+    ax.grid(True, alpha=0.1, which="minor")
+
+    # Combined legend
+    lines1, labels1 = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
 
     plt.tight_layout()
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.show()
 
-    return data_with_normalized
+    if SHOW_PLOTS:
+        plt.show()
+
+    plt.close()
 
 
 def plot_documents_over_time(data: pd.DataFrame, save_path: str | None = None) -> None:
-    """Plot total documents over time.
+    """Plot documents over time with standardized x-axis formatting."""
+    fig, ax = plt.subplots(figsize=(12, 6))
 
-    Parameters
-    ----------
-    data : pd.DataFrame
-        DataFrame with Date/Year as index and document_count column
-    save_path : str, optional
-        Path to save the plot
+    ax.bar(data.index, data["document_count"], alpha=0.7)
+    ax.set_title("Documents Over Time", fontsize=14, fontweight="bold")
+    ax.set_ylabel("Document Count", fontsize=12)
+    ax.set_xlabel("Year", fontsize=12)
 
-    """
-    plt.figure(figsize=(12, 6))
+    # Standardized x-axis formatting - every 5 years with yearly ticks
+    ax.xaxis.set_major_locator(mdates.YearLocator(5))
+    ax.xaxis.set_minor_locator(mdates.YearLocator(1))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 
-    # For daily data, sample for readability
-    if len(data) > DAILY_DATA_THRESHOLD:
-        sample_data = data.iloc[::DAILY_SAMPLING_INTERVAL]
-        sns.lineplot(
-            x=sample_data.index,
-            y="document_count",
-            data=sample_data,
-            marker="o",
-            color="orange",
-        )
-        plt.title("Total Documents Over Time (Sampled)")
-    else:
-        sns.lineplot(
-            x=data.index,
-            y="document_count",
-            data=data,
-            marker="o",
-            color="orange",
-        )
-        plt.title("Total Documents Over Time")
+    # Rotate labels for better readability
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
 
-    # Handle datetime vs numeric index
-    if hasattr(data.index, "year"):
-        plt.xlabel("Date")
-        if ENABLE_YEAR_LOCATOR:
-            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
-            plt.gca().xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
-        plt.xticks(rotation=45)
-    else:
-        plt.xlabel("Time Period")
+    # Add grid for better readability
+    ax.grid(True, alpha=0.3, which="major")
+    ax.grid(True, alpha=0.1, which="minor")
 
-    plt.ylabel("Total Number of Documents")
-    plt.grid(True)
+    plt.tight_layout()
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.show()
+
+    if SHOW_PLOTS:
+        plt.show()
+
+    plt.close()
 
 
 def plot_entities_vs_documents(
@@ -369,7 +247,8 @@ def plot_entities_vs_documents(
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.show()
+    if SHOW_PLOTS:
+        plt.show()
 
 
 def create_all_plots(data: pd.DataFrame, output_dir: str | None = None) -> pd.DataFrame:
