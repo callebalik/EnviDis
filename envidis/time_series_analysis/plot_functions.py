@@ -147,20 +147,9 @@ def plot_raw_timeseries(
     ax.set_title(default_kwargs["title"], fontsize=12, fontweight="bold")
     ax.set_ylabel(default_kwargs["ylabel"])
 
-    # Improve x-axis formatting for better time resolution
-    # Adjust based on the actual date range after filtering
-    date_range_years = sample_data.index.year.max() - sample_data.index.year.min()
-
-    if date_range_years > 100:
-        ax.xaxis.set_major_locator(mdates.YearLocator(10))  # Major ticks every 10 years
-        ax.xaxis.set_minor_locator(mdates.YearLocator(5))  # Minor ticks every 5 years
-    elif date_range_years > 50:
-        ax.xaxis.set_major_locator(mdates.YearLocator(5))  # Major ticks every 5 years
-        ax.xaxis.set_minor_locator(mdates.YearLocator(1))  # Minor ticks every year
-    else:
-        ax.xaxis.set_major_locator(mdates.YearLocator(2))  # Major ticks every 2 years
-        ax.xaxis.set_minor_locator(mdates.YearLocator(1))  # Minor ticks every year
-
+    # Standardized x-axis formatting for time plots - every 5 years with yearly ticks
+    ax.xaxis.set_major_locator(mdates.YearLocator(5))  # Major ticks every 5 years
+    ax.xaxis.set_minor_locator(mdates.YearLocator(1))  # Minor ticks every year
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
 
     # Rotate labels for better readability
@@ -176,9 +165,10 @@ def plot_raw_timeseries(
 def plot_yearly_aggregated(
     yearly_data: pd.DataFrame,
     ax: plt.Axes | None = None,
+    best_model=None,  # Add parameter for best fitted model
     **kwargs,
 ) -> plt.Axes:
-    """Plot yearly aggregated data as scatter points with optional trend line and document context.
+    """Plot yearly aggregated data as scatter points with optional best fitted model overlay and document context.
 
     Parameters
     ----------
@@ -186,6 +176,8 @@ def plot_yearly_aggregated(
         DataFrame with 'Year' and 'co_count' columns
     ax : plt.Axes, optional
         Matplotlib axes to plot on
+    best_model : optional
+        Best fitted model to overlay instead of linear trend
     **kwargs : dict
         Additional plotting parameters
 
@@ -267,26 +259,120 @@ def plot_yearly_aggregated(
         y_min = max(0, final_filtered_data["co_count"].min())
         ax.set_ylim(y_min, y_max * 1.05)  # Add 5% padding above max
 
-    # Add trend line if requested (use all data)
-    if default_kwargs.get("show_trend", True) and len(final_filtered_data) > 3:
+    # Add best fitted model overlay instead of linear trend
+    if default_kwargs.get("show_trend", True) and best_model is not None:
         try:
-            z = np.polyfit(
-                final_filtered_data["Year"],
-                final_filtered_data["co_count"],
-                1,
-            )
-            p = np.poly1d(z)
-            ax.plot(
-                final_filtered_data["Year"],
-                p(final_filtered_data["Year"]),
-                color=default_kwargs["trend_color"],
-                alpha=default_kwargs["trend_alpha"],
-                linewidth=1.5,
-                label="Linear Trend",
-                zorder=2,
-            )
-        except:
-            pass  # Skip trend if fitting fails
+            # Check if the model has fitted values that can be plotted
+            if hasattr(best_model, "fittedvalues") and len(best_model.fittedvalues) > 0:
+                # Get model name for labeling
+                model_name = getattr(best_model, "model_name", "Unknown")
+
+                # Check if model name is "Unknown" - if so, show warning and skip plotting
+                if model_name.lower() == "unknown":
+                    print(
+                        "Warning: Best fitted model has unknown type - skipping trend overlay",
+                    )
+                    # Add text annotation about missing trend
+                    # ax.text(
+                    #     0.98,
+                    #     0.02,
+                    #     "Note: Best model type unknown\n- Trend overlay skipped",
+                    #     transform=ax.transAxes,
+                    #     fontsize=8,
+                    #     verticalalignment="bottom",
+                    #     horizontalalignment="right",
+                    #     bbox=dict(
+                    #         boxstyle="round,pad=0.3", facecolor="orange", alpha=0.3
+                    #     ),
+                    # )
+                else:
+                    # Get the corresponding years for the fitted values
+                    # Assume the model was fitted on the same data structure
+                    if hasattr(best_model.model, "data") and hasattr(
+                        best_model.model.data,
+                        "frame",
+                    ):
+                        model_years = best_model.model.data.frame.index
+                        if hasattr(model_years, "year"):
+                            model_years = model_years.year
+                        elif "Year" in best_model.model.data.frame.columns:
+                            model_years = best_model.model.data.frame["Year"]
+                        else:
+                            # Fallback: use the filtered data years
+                            model_years = final_filtered_data["Year"]
+                    else:
+                        model_years = final_filtered_data["Year"]
+
+                    ax.plot(
+                        model_years,
+                        best_model.fittedvalues,
+                        color=default_kwargs["trend_color"],
+                        alpha=default_kwargs["trend_alpha"],
+                        linewidth=2.5,
+                        label=f"Best Fitted Model ({model_name})",
+                        zorder=2,
+                    )
+            else:
+                # Model doesn't have fitted values - show warning
+                print(
+                    "Warning: Best fitted model has no fitted values - skipping trend overlay",
+                )
+                ax.text(
+                    0.98,
+                    0.02,
+                    "Note: Best model has no fitted values\n- Trend overlay skipped",
+                    transform=ax.transAxes,
+                    fontsize=8,
+                    verticalalignment="bottom",
+                    horizontalalignment="right",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="orange", alpha=0.3),
+                )
+        except Exception as e:
+            # Log the specific error for debugging
+            print(f"Warning: Best fitted model plotting failed: {str(e)}")
+
+            # Fallback to linear trend if best model plotting fails
+            try:
+                z = np.polyfit(
+                    final_filtered_data["Year"],
+                    final_filtered_data["co_count"],
+                    1,
+                )
+                p = np.poly1d(z)
+                ax.plot(
+                    final_filtered_data["Year"],
+                    p(final_filtered_data["Year"]),
+                    color=default_kwargs["trend_color"],
+                    alpha=default_kwargs["trend_alpha"],
+                    linewidth=1.5,
+                    label="Linear Trend (Fallback)",
+                    zorder=2,
+                )
+            except:
+                # If even linear trend fails, add a note
+                ax.text(
+                    0.98,
+                    0.02,
+                    "Note: Trend overlay failed\n- Unable to display trend",
+                    transform=ax.transAxes,
+                    fontsize=8,
+                    verticalalignment="bottom",
+                    horizontalalignment="right",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="red", alpha=0.3),
+                )
+                pass  # Skip trend if both best model and linear fitting fail
+    elif default_kwargs.get("show_trend", True) and best_model is None:
+        # No best model provided - show info note
+        ax.text(
+            0.98,
+            0.02,
+            "Note: No fitted model provided\n- Trend overlay unavailable",
+            transform=ax.transAxes,
+            fontsize=8,
+            verticalalignment="bottom",
+            horizontalalignment="right",
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray", alpha=0.5),
+        )
 
     # Add co-occurrence rate (co-occurrences per document) if document data available
     if (
@@ -316,15 +402,15 @@ def plot_yearly_aggregated(
             ax2.tick_params(axis="y", labelcolor=default_kwargs["rate_color"])
 
             # Add text annotation explaining the discrepancy
-            ax.text(
-                0.02,
-                0.98,
-                "Note: Rising totals may reflect\nincreasing publication volume\nrather than higher co-occurrence rates",
-                transform=ax.transAxes,
-                fontsize=8,
-                verticalalignment="top",
-                bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.3),
-            )
+            # ax.text(
+            #     0.02,
+            #     0.98,
+            #     "Note: Rising totals may reflect\nincreasing publication volume\nrather than higher co-occurrence rates",
+            #     transform=ax.transAxes,
+            #     fontsize=8,
+            #     verticalalignment="top",
+            #     bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.3),
+            # )
         except:
             pass  # Skip rate calculation if it fails
 
@@ -332,27 +418,16 @@ def plot_yearly_aggregated(
     ax.set_ylabel(default_kwargs["ylabel"])
     ax.set_xlabel("Year")
 
-    # Improve x-axis resolution using filtered data
-    years = filtered_data["Year"]
-    year_range = years.max() - years.min()
-
-    if year_range > 50:
-        ax.xaxis.set_major_locator(plt.MultipleLocator(10))
-        ax.xaxis.set_minor_locator(plt.MultipleLocator(5))
-    elif year_range > 20:
-        ax.xaxis.set_major_locator(plt.MultipleLocator(5))
-        ax.xaxis.set_minor_locator(plt.MultipleLocator(1))
-    else:
-        ax.xaxis.set_major_locator(plt.MultipleLocator(2))
-        ax.xaxis.set_minor_locator(plt.MultipleLocator(1))
+    # Standardized x-axis formatting - every 5 years with yearly ticks
+    ax.xaxis.set_major_locator(plt.MultipleLocator(5))  # Major ticks every 5 years
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(1))  # Minor ticks every year
 
     # Add grid for better readability
     ax.grid(True, alpha=0.3, which="major")
     ax.grid(True, alpha=0.1, which="minor")
 
-    # Rotate labels if needed
-    if year_range > 30:
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+    # Rotate labels for better readability
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
 
     # Combine legends if we have both plots
     lines1, labels1 = ax.get_legend_handles_labels()
@@ -748,27 +823,115 @@ def plot_trend_analysis(
         y_min = max(0, counts.min())
         ax.set_ylim(y_min, y_max * 1.05)
 
-        if fit_trend:
-            # Fit polynomial trend
+        # Add best fitted model overlay instead of linear trend
+        if default_kwargs.get("show_trend", True) and len(filtered_data) > 0:
             try:
-                z = np.polyfit(years, counts, trend_degree)
-                p = np.poly1d(z)
-                trend_label = (
-                    f'{"Quadratic" if trend_degree == 2 else "Polynomial"} Trend'
-                )
-                ax.plot(
-                    years,
-                    p(years),
-                    color=default_kwargs["trend_color"],
-                    linewidth=default_kwargs["trend_linewidth"],
-                    alpha=default_kwargs["trend_alpha"],
-                    label=trend_label,
-                    zorder=2,
-                )
-            except:
-                pass  # Skip trend if fitting fails
+                # Check if the model has fitted values that can be plotted
+                if (
+                    hasattr(default_kwargs, "fittedvalues")
+                    and len(default_kwargs.fittedvalues) > 0
+                ):
+                    # Get model name for labeling
+                    model_name = getattr(default_kwargs, "model_name", "Unknown")
 
-        ax.legend(fontsize=9)
+                    # Check if model name is "Unknown" - if so, show warning and skip plotting
+                    if model_name.lower() == "unknown":
+                        print(
+                            "Warning: Best fitted model has unknown type - skipping trend overlay",
+                        )
+                        # # Add text annotation about missing trend
+                        # ax.text(
+                        #     0.98,
+                        #     0.02,
+                        #     "Note: Best model type unknown\n- Trend overlay skipped",
+                        #     transform=ax.transAxes,
+                        #     fontsize=8,
+                        #     verticalalignment="bottom",
+                        #     horizontalalignment="right",
+                        #     bbox=dict(
+                        #         boxstyle="round,pad=0.3", facecolor="orange", alpha=0.3,
+                        #     ),
+                        # )
+                    else:
+                        # Get the corresponding years for the fitted values
+                        # Assume the model was fitted on the same data structure
+                        if hasattr(default_kwargs.model, "data") and hasattr(
+                            default_kwargs.model.data,
+                            "frame",
+                        ):
+                            model_years = default_kwargs.model.data.frame.index
+                            if hasattr(model_years, "year"):
+                                model_years = model_years.year
+                            elif "Year" in default_kwargs.model.data.frame.columns:
+                                model_years = default_kwargs.model.data.frame["Year"]
+                            else:
+                                # Fallback: use the filtered data years
+                                model_years = filtered_data["Year"]
+                        else:
+                            model_years = filtered_data["Year"]
+
+                        ax.plot(
+                            model_years,
+                            default_kwargs.fittedvalues,
+                            color=default_kwargs["trend_color"],
+                            alpha=default_kwargs["trend_alpha"],
+                            linewidth=2.5,
+                            label=f"Best Fitted Model ({model_name})",
+                            zorder=2,
+                        )
+                else:
+                    # Model doesn't have fitted values - show warning
+                    print(
+                        "Warning: Best fitted model has no fitted values - skipping trend overlay",
+                    )
+                    ax.text(
+                        0.98,
+                        0.02,
+                        "Note: Best model has no fitted values\n- Trend overlay skipped",
+                        transform=ax.transAxes,
+                        fontsize=8,
+                        verticalalignment="bottom",
+                        horizontalalignment="right",
+                        bbox=dict(
+                            boxstyle="round,pad=0.3",
+                            facecolor="orange",
+                            alpha=0.3,
+                        ),
+                    )
+            except Exception as e:
+                # Log the specific error for debugging
+                print(f"Warning: Best fitted model plotting failed: {str(e)}")
+
+                # Fallback to linear trend if best model plotting fails
+                try:
+                    z = np.polyfit(
+                        filtered_data["Year"],
+                        filtered_data["co_count"],
+                        1,
+                    )
+                    p = np.poly1d(z)
+                    ax.plot(
+                        filtered_data["Year"],
+                        p(filtered_data["Year"]),
+                        color=default_kwargs["trend_color"],
+                        alpha=default_kwargs["trend_alpha"],
+                        linewidth=1.5,
+                        label="Linear Trend (Fallback)",
+                        zorder=2,
+                    )
+                except:
+                    # If even linear trend fails, add a note
+                    ax.text(
+                        0.98,
+                        0.02,
+                        "Note: Trend overlay failed\n- Unable to display trend",
+                        transform=ax.transAxes,
+                        fontsize=8,
+                        verticalalignment="bottom",
+                        horizontalalignment="right",
+                        bbox=dict(boxstyle="round,pad=0.3", facecolor="red", alpha=0.3),
+                    )
+                    pass  # Skip trend if both best model and linear fitting fail
 
         # Improve x-axis resolution
         year_range = years.max() - years.min()
@@ -794,52 +957,16 @@ def plot_trend_analysis(
     ax.set_xlabel(default_kwargs["xlabel"])
     ax.set_ylabel(default_kwargs["ylabel"])
 
-    return ax
+    # Standardized x-axis formatting - every 5 years with yearly ticks
+    ax.xaxis.set_major_locator(plt.MultipleLocator(5))  # Major ticks every 5 years
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(1))  # Minor ticks every year
 
+    # Add grid for better readability
+    ax.grid(True, alpha=0.3, which="major")
+    ax.grid(True, alpha=0.1, which="minor")
 
-def plot_zero_inflation_pie(
-    data: pd.DataFrame,
-    ax: plt.Axes | None = None,
-    **kwargs,
-) -> plt.Axes:
-    """Plot pie chart showing zero vs non-zero co-occurrences.
-
-    Parameters
-    ----------
-    data : pd.DataFrame
-        DataFrame with 'co_count' column
-    ax : plt.Axes, optional
-        Matplotlib axes to plot on
-    **kwargs : dict
-        Additional plotting parameters
-
-    Returns
-    -------
-    plt.Axes
-        The axes object with the plot
-
-    """
-    if ax is None:
-        ax = plt.gca()
-
-    default_kwargs = {
-        "colors": ["lightcoral", "lightblue"],
-        "autopct": "%1.1f%%",
-        "title": "Zero-Inflation Analysis",
-    }
-    default_kwargs.update(kwargs)
-
-    zero_counts = (data["co_count"] == 0).sum()
-    non_zero_counts = (data["co_count"] > 0).sum()
-
-    ax.pie(
-        [zero_counts, non_zero_counts],
-        labels=["Zero Co-occurrences", "Non-zero Co-occurrences"],
-        autopct=default_kwargs["autopct"],
-        colors=default_kwargs["colors"],
-    )
-
-    ax.set_title(default_kwargs["title"], fontsize=12, fontweight="bold")
+    # Rotate labels for better readability
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
 
     return ax
 
@@ -932,6 +1059,13 @@ def plot_recent_trend_bar(
     ax.set_title(default_kwargs["title"], fontsize=12, fontweight="bold")
     ax.set_xlabel(default_kwargs["xlabel"])
     ax.set_ylabel(default_kwargs["ylabel"])
+
+    # Standardized x-axis formatting - every 5 years with yearly ticks
+    ax.xaxis.set_major_locator(plt.MultipleLocator(5))  # Major ticks every 5 years
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(1))  # Minor ticks every year
+
+    # Rotate labels for better readability
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
 
     return ax
 
@@ -1201,6 +1335,17 @@ def plot_time_series_decomposition(
     ax.set_xlabel(default_kwargs["xlabel"])
     ax.set_ylabel(default_kwargs["ylabel"])
 
+    # Standardized x-axis formatting - every 5 years with yearly ticks
+    ax.xaxis.set_major_locator(plt.MultipleLocator(5))  # Major ticks every 5 years
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(1))  # Minor ticks every year
+
+    # Add grid for better readability
+    ax.grid(True, alpha=0.3, which="major")
+    ax.grid(True, alpha=0.1, which="minor")
+
+    # Rotate labels for better readability
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+
     return ax
 
 
@@ -1330,4 +1475,104 @@ def plot_publication_volume_context(
         ax.legend(lines1 + lines2, labels1 + labels2, fontsize=9)
 
     ax.set_title(default_kwargs["title"], fontsize=12, fontweight="bold")
+    return ax
+
+
+def plot_zero_inflation_pie(data, ax, title="Zero Inflation Analysis"):
+    """Create a pie chart showing zero vs non-zero observations.
+
+    Parameters
+    ----------
+    data : pd.Series, pd.DataFrame, or array-like
+        The data to analyze for zero inflation
+    ax : matplotlib.axes.Axes
+        The axes to plot on
+    title : str, optional
+        Title for the plot
+    """
+    import numpy as np
+    import pandas as pd
+
+    # Handle different data types
+    if isinstance(data, pd.DataFrame):
+        # If DataFrame, use the first numeric column or 'co_count' if available
+        if 'co_count' in data.columns:
+            data = data['co_count']
+        else:
+            # Find first numeric column
+            numeric_cols = data.select_dtypes(include=[np.number]).columns
+            if len(numeric_cols) > 0:
+                data = data[numeric_cols[0]]
+            else:
+                ax.text(0.5, 0.5, 'No numeric data available', ha='center', va='center', 
+                        transform=ax.transAxes, fontsize=12)
+                ax.set_title(title, fontsize=10, fontweight='bold')
+                return
+    elif hasattr(data, 'ndim') and data.ndim > 1:
+        # Handle 2D arrays
+        if hasattr(data, 'iloc'):
+            # If it's a pandas object, flatten or take first column
+            data = data.iloc[:, 0] if data.shape[1] > 0 else data.flatten()
+        else:
+            # If it's a numpy array, flatten it
+            data = np.array(data).flatten()
+    
+    # Convert to pandas Series if needed
+    if not isinstance(data, pd.Series):
+        try:
+            data = pd.Series(data)
+        except Exception as e:
+            ax.text(0.5, 0.5, f'Data conversion error:\n{str(e)}', ha='center', va='center', 
+                    transform=ax.transAxes, fontsize=10)
+            ax.set_title(title, fontsize=10, fontweight='bold')
+            return
+    
+    # Remove any NaN values
+    data = data.dropna()
+    
+    # Count zeros and non-zeros
+    zero_count = (data == 0).sum()
+    non_zero_count = (data > 0).sum()
+    
+    # Calculate percentages
+    total = len(data)
+    if total == 0:
+        ax.text(0.5, 0.5, 'No data available', ha='center', va='center', 
+                transform=ax.transAxes, fontsize=12)
+        ax.set_title(title, fontsize=10, fontweight='bold')
+        return
+    
+    zero_pct = (zero_count / total) * 100
+    non_zero_pct = (non_zero_count / total) * 100
+    
+    # Create pie chart
+    sizes = [zero_pct, non_zero_pct]
+    labels = [f'Zero values\n({zero_count:,} obs, {zero_pct:.1f}%)', 
+              f'Non-zero values\n({non_zero_count:,} obs, {non_zero_pct:.1f}%)']
+    colors = ['#ff7f7f', '#7f7fff']
+    
+    # Only plot if there's data
+    if any(size > 0 for size in sizes):
+        wedges, texts, autotexts = ax.pie(sizes, labels=labels, colors=colors, 
+                                         autopct='%1.1f%%', startangle=90)
+        
+        # Style the text
+        for autotext in autotexts:
+            autotext.set_color('white')
+            autotext.set_fontweight('bold')
+            autotext.set_fontsize(9)
+        
+        for text in texts:
+            text.set_fontsize(8)
+    else:
+        ax.text(0.5, 0.5, 'No data to display', ha='center', va='center', 
+                transform=ax.transAxes, fontsize=12)
+    
+    ax.set_title(title, fontsize=10, fontweight="bold")
+    
+    # Add summary statistics as text
+    summary_text = f"Total observations: {total:,}\nZero inflation: {zero_pct:.1f}%"
+    ax.text(0.02, 0.98, summary_text, transform=ax.transAxes, fontsize=8,
+            verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+
     return ax

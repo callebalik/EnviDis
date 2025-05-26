@@ -1,24 +1,49 @@
 #!/usr/bin/env python3
-"""Real Data Comprehensive Analysis Report Generator
+"""Real Data Comprehensive Analysis Report
 This script creates a complete analysis for real time series data with date-level resolution.
 Adapted for co-occurrence data from 1794-2025.
 """
 
 import os
-import sys
-import warnings
-from datetime import datetime
-
-import matplotlib.dates as mdates
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
+from datetime import datetime
 from scipy import stats
 from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.stats.stattools import durbin_watson
 from statsmodels.tsa.stattools import acf
+
+# Module constants for axis configuration
+AXIS_CONFIG = {
+    "title_fontsize": 12,
+    "title_fontweight": "bold",
+    "label_fontsize": 10,
+    "tick_labelsize": 8,
+    "legend_fontsize": 9,
+    "grid_alpha": 0.3,
+    "marker_size": 30,
+    "line_width": 2,
+    "line_alpha": 0.8,
+}
+
+# Date formatting configuration
+DATE_FORMAT_CONFIG = {
+    "date_format": "%Y",
+    "major_locator_years": 5,
+    "rotation": 45,
+}
+
+# Grid layout configuration for enhanced A/B plots
+GRID_CONFIG = {
+    "total_rows": 6,
+    "total_cols": 4,
+    "hspace": 0.4,
+    "wspace": 0.3,
+    # Enhanced spacing for A and B plots
+    "ab_plot_rows": 2,  # A and B plots now take 2 rows each
+    "other_plot_rows": 1,
+}
 
 
 class RealDataAnalysisReport:
@@ -78,24 +103,15 @@ class RealDataAnalysisReport:
         original_length = len(df)
         if self.start_date:
             df = df[df["Date"] >= self.start_date]
-            print(
-                f"Filtered data from {self.start_date.date()}: {len(df)} records remaining",
-            )
 
         if self.end_date:
             df = df[df["Date"] <= self.end_date]
-            print(
-                f"Filtered data to {self.end_date.date()}: {len(df)} records remaining",
-            )
 
         if self.start_date or self.end_date:
-            print(
-                f"Date filtering reduced dataset from {original_length:,} to {len(df):,} records",
-            )
+            print(f"Date filtering applied: {original_length} -> {len(df)} observations")
 
         if len(df) == 0:
-            msg = "No data remains after applying date filters"
-            raise ValueError(msg)
+            raise ValueError("No data remaining after date filtering")
 
         # Rename for consistency with existing framework
         df["co_count"] = df["co_count"]  # Use co-occurrence count as dependent variable
@@ -167,11 +183,9 @@ class RealDataAnalysisReport:
                 offset=np.log(modeling_data["document_count"]),
             ).fit(disp=0)
 
-            print(
-                f"   ✓ Basic models fitted on {len(modeling_data)} observations (using document count as offset)",
-            )
+            print("   ✓ Basic models fitted successfully")
         except Exception as e:
-            print(f"   ⚠ Basic model fitting encountered issues: {e}")
+            print(f"   ✗ Basic model fitting failed: {str(e)}")
 
     def fit_trend_models(self) -> None:
         """Fit polynomial trend models."""
@@ -212,11 +226,9 @@ class RealDataAnalysisReport:
                 offset=np.log(modeling_data["document_count"]),
             ).fit(disp=0)
 
-            print(
-                f"   ✓ Trend models fitted on {len(modeling_data)} observations (using document count as offset)",
-            )
+            print("   ✓ Trend models fitted successfully")
         except Exception as e:
-            print(f"   ⚠ Trend model fitting encountered issues: {e}")
+            print(f"   ✗ Trend model fitting failed: {str(e)}")
 
     def analyze_temporal_patterns(self) -> None:
         """Analyze temporal patterns and seasonality."""
@@ -334,6 +346,17 @@ class RealDataAnalysisReport:
         model_summary = self.create_model_summary_table()
         coef_table = self.create_coefficients_table()
 
+        # Get the best model from the models dictionary
+        best_model = None
+        if self.models:
+            # Try to get the best trend model
+            if "quadratic" in self.models and self.models["quadratic"] is not None:
+                best_model = self.models["quadratic"]
+            elif "cubic" in self.models and self.models["cubic"] is not None:
+                best_model = self.models["cubic"]
+            elif "linear" in self.models and self.models["linear"] is not None:
+                best_model = self.models["linear"]
+
         # Create title suffix based on date filters
         title_suffix = ""
         if self.start_date or self.end_date:
@@ -344,14 +367,12 @@ class RealDataAnalysisReport:
                 date_parts.append(f"to {self.end_date.date()}")
             title_suffix = f" ({' '.join(date_parts)})"
 
-        # Create comprehensive plot using the orchestrator
-        fig = orchestrator.create_comprehensive_plot(
-            data=self.data,
-            yearly_data=getattr(self, "yearly_data", None),
-            monthly_data=getattr(self, "monthly_data", None),
-            model_summary=model_summary if len(model_summary) > 0 else None,
-            coef_table=coef_table if len(coef_table) > 0 else None,
+        # Create enhanced comprehensive plot with larger A/B sections
+        fig = self._create_enhanced_visualization(
+            model_summary=model_summary,
+            coef_table=coef_table,
             title_suffix=title_suffix,
+            best_model=best_model,  # Pass the best model
         )
 
         # Save the comprehensive visualization with date filter in filename
@@ -370,342 +391,240 @@ class RealDataAnalysisReport:
 
         return fig
 
-    def create_focused_plots(self, focus_types=None):
-        """Create focused analysis plots using modular plotting system."""
-        from .plot_orchestrator import PlotOrchestrator
-
-        if focus_types is None:
-            focus_types = ["temporal", "distribution", "trends", "quality"]
-
-        # Initialize plot orchestrator
-        orchestrator = PlotOrchestrator(output_dir=self.output_dir)
-
-        # Create title suffix based on date filters
-        title_suffix = ""
-        filename_suffix = ""
-        if self.start_date or self.end_date:
-            date_parts = []
-            filename_parts = []
-            if self.start_date:
-                date_parts.append(f"from {self.start_date.date()}")
-                filename_parts.append(f"from_{self.start_date.strftime('%Y%m%d')}")
-            if self.end_date:
-                date_parts.append(f"to {self.end_date.date()}")
-                filename_parts.append(f"to_{self.end_date.strftime('%Y%m%d')}")
-            title_suffix = f" ({' '.join(date_parts)})"
-            filename_suffix = f"_{'_'.join(filename_parts)}"
-
-        created_plots = []
-        for focus_type in focus_types:
-            try:
-                fig = orchestrator.create_focused_analysis(
-                    data=self.data,
-                    yearly_data=getattr(self, "yearly_data", None),
-                    focus_type=focus_type,
-                    title_suffix=title_suffix,
-                )
-
-                output_path = f"{self.output_dir}/real_data_report/focused_{focus_type}_analysis{filename_suffix}.png"
-                fig.savefig(output_path, dpi=300, bbox_inches="tight")
-                plt.close(fig)
-
-                created_plots.append(output_path)
-                print(f"Focused {focus_type} analysis saved to: {output_path}")
-
-            except Exception as e:
-                print(f"Error creating {focus_type} focused plot: {e}")
-
-        return created_plots
-
-    def generate_text_summary(self):
-        """Generate comprehensive text summary of the analysis."""
-        summary = []
-        summary.append("=" * 80)
-        summary.append("COMPREHENSIVE REAL DATA ANALYSIS SUMMARY")
-        summary.append("=" * 80)
-        summary.append("")
-
-        # Data overview
-        summary.append("📊 DATA OVERVIEW")
-        summary.append("-" * 40)
-        summary.append(f"• Total observations: {len(self.data):,}")
-        summary.append(
-            f"• Date range: {self.data.index.min().date()} to {self.data.index.max().date()}",
+    def _create_enhanced_visualization(
+        self,
+        model_summary,
+        coef_table,
+        title_suffix="",
+        best_model=None,
+    ):
+        """Create enhanced visualization with larger A and B plots."""
+        # Set up the figure with enhanced grid layout
+        fig = plt.figure(figsize=(20, 28))  # Increased height for enhanced A/B plots
+        gs = fig.add_gridspec(
+            GRID_CONFIG["total_rows"] + 2,  # Extra rows for enhanced A/B
+            GRID_CONFIG["total_cols"],
+            hspace=GRID_CONFIG["hspace"],
+            wspace=GRID_CONFIG["wspace"],
         )
 
-        # Add filter information if applicable
-        if self.start_date or self.end_date:
-            summary.append("• Applied date filters:")
-            if self.start_date:
-                summary.append(f"  - Start date: {self.start_date.date()}")
-            if self.end_date:
-                summary.append(f"  - End date: {self.end_date.date()}")
+        # Color scheme
+        colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"]
 
-        summary.append(f"• Years covered: {self.data.index.year.nunique()}")
-        summary.append("• Co-occurrence statistics:")
-        summary.append(f"  - Mean: {self.data['co_count'].mean():.2f}")
-        summary.append(f"  - Median: {self.data['co_count'].median():.2f}")
-        summary.append(f"  - Max: {self.data['co_count'].max():,}")
-        summary.append(
-            f"  - Zero values: {(self.data['co_count'] == 0).sum():,} ({(self.data['co_count'] == 0).mean()*100:.1f}%)",
-        )
-        summary.append("")
+        # Determine if we're working with date or year indices
+        is_date_index = isinstance(self.data.index, pd.DatetimeIndex)
 
-        # Model results
-        if self.models:
-            summary.append("🔬 MODEL ANALYSIS RESULTS")
-            summary.append("-" * 40)
-
-            model_summary = self.create_model_summary_table()
-            if len(model_summary) > 0:
-                # Find best model by AIC
-                best_model_idx = model_summary["AIC"].astype(float).idxmin()
-                best_model = model_summary.iloc[best_model_idx]
-
-                summary.append(
-                    f"• Best model: {best_model['Model']} (AIC: {best_model['AIC']})",
-                )
-                summary.append("• Model performance:")
-                for _, row in model_summary.iterrows():
-                    summary.append(
-                        f"  - {row['Model']}: AIC={row['AIC']}, R²={row['Pseudo R²']}",
-                    )
-                summary.append("")
-
-        # Coefficient interpretation
-        coef_table = self.create_coefficients_table()
-        if len(coef_table) > 0:
-            summary.append("📈 KEY FINDINGS")
-            summary.append("-" * 40)
-
-            # Focus on significant coefficients
-            significant_coefs = coef_table[coef_table["Significant"] != "Not Sig."]
-            if len(significant_coefs) > 0:
-                summary.append("• Significant time trends detected:")
-                for _, row in significant_coefs.iterrows():
-                    if (
-                        "time" in row["Parameter"].lower()
-                        or "year" in row["Parameter"].lower()
-                    ):
-                        direction = (
-                            "increasing"
-                            if float(row["Coefficient"]) > 0
-                            else "decreasing"
-                        )
-                        summary.append(
-                            f"  - {row['Parameter']}: {direction} trend ({row['Significant']})",
-                        )
-                summary.append("")
-
-        # Data quality assessment
-        summary.append("✅ DATA QUALITY ASSESSMENT")
-        summary.append("-" * 40)
-
-        # Add detailed outlier analysis with configurable threshold
-        if hasattr(self, "yearly_data") and self.yearly_data is not None:
-            yearly_data = self.yearly_data
-            # Use configurable threshold (default 99.7th percentile)
-            percentile_threshold = 99.7  # This could be made configurable too
-            percentile_value = yearly_data["co_count"].quantile(
-                percentile_threshold / 100,
-            )
-            outlier_years = yearly_data[yearly_data["co_count"] > percentile_value]
-
-            if len(outlier_years) > 0:
-                summary.append("• Outlier years detected:")
-                for _, row in outlier_years.iterrows():
-                    year = int(row["Year"])
-                    value = int(row["co_count"])
-                    # Calculate how many times above the median
-                    median_val = yearly_data["co_count"].median()
-                    multiplier = value / median_val if median_val > 0 else "N/A"
-                    if isinstance(multiplier, int | float):
-                        summary.append(
-                            f"  - {year}: {value:,} co-occurrences ({multiplier:.1f}x median)",
-                        )
-                    else:
-                        summary.append(f"  - {year}: {value:,} co-occurrences")
-
-                # Add statistical context
-                normal_years = yearly_data[yearly_data["co_count"] <= percentile_value]
-                summary.append(
-                    f"  - Normal range ({percentile_threshold:.1f}% of years): 0 to {int(percentile_value):,} co-occurrences",
-                )
-                summary.append(
-                    "  - These outliers were excluded from most trend visualizations",
-                )
-            else:
-                summary.append(
-                    f"• ✓ No extreme outlier years detected (>{percentile_threshold:.1f}th percentile)",
-                )
-
-        # Raw data outlier analysis with configurable threshold
-        percentile_threshold_raw = 99.7  # This could be made configurable too
-        percentile_value_raw = self.data["co_count"].quantile(
-            percentile_threshold_raw / 100,
-        )
-        outlier_days = self.data[self.data["co_count"] > percentile_value_raw]
-
-        if len(outlier_days) > 0:
-            summary.append("• Daily outlier observations:")
-            outlier_years_raw = sorted(outlier_days.index.year.unique())
-            outlier_count = len(outlier_days)
-            outlier_percentage = (outlier_count / len(self.data)) * 100
-            max_daily = outlier_days["co_count"].max()
-
-            summary.append(
-                f"  - {outlier_count:,} outlier days ({outlier_percentage:.2f}% of all observations)",
-            )
-            summary.append(f"  - Maximum daily value: {max_daily:,} co-occurrences")
-            summary.append(
-                f"  - Outliers span {len(outlier_years_raw)} years: {outlier_years_raw[0]}-{outlier_years_raw[-1]}",
-            )
-            summary.append(
-                f"  - Threshold ({percentile_threshold_raw:.1f}th percentile): {int(percentile_value_raw):,} co-occurrences",
-            )
+        # For visualization with large datasets, sample data points
+        if len(self.data) > 1000:
+            viz_data = self.data.iloc[
+                :: max(1, len(self.data) // 1000)
+            ]  # Sample for visualization
         else:
-            summary.append(
-                f"• ✓ No extreme daily outliers detected (>{percentile_threshold_raw:.1f}th percentile)",
-            )
+            viz_data = self.data
 
-        # Check for data quality issues
-        missing_years = []
-        year_range = range(self.data.index.year.min(), self.data.index.year.max() + 1)
-        observed_years = set(self.data.index.year.unique())
-        missing_years = [year for year in year_range if year not in observed_years]
+        # 1. Enhanced Data Overview (Takes 2 rows now)
+        ax1 = fig.add_subplot(gs[0:2, 0:2])  # 2 rows, 2 columns
+        ax1_twin = ax1.twinx()
 
-        if missing_years:
-            # Group consecutive missing years for better reporting
-            missing_ranges = []
-            current_range = [missing_years[0]]
+        # Entities over time
+        line1 = ax1.plot(
+            viz_data.index,
+            viz_data["co_count"],
+            "o-",
+            color=colors[0],
+            linewidth=AXIS_CONFIG["line_width"],
+            markersize=4,
+            label="Identified DIS-PNM co-occurrences",
+            alpha=AXIS_CONFIG["line_alpha"],
+        )
+        ax1.set_ylabel(
+            "Identified DIS-PNM co-occurrences",
+            color=colors[0],
+            fontsize=AXIS_CONFIG["label_fontsize"],
+        )
+        ax1.tick_params(
+            axis="y",
+            labelcolor=colors[0],
+            labelsize=AXIS_CONFIG["tick_labelsize"],
+        )
+        ax1.grid(True, alpha=AXIS_CONFIG["grid_alpha"])
 
-            for year in missing_years[1:]:
-                if year == current_range[-1] + 1:
-                    current_range.append(year)
-                else:
-                    if len(current_range) == 1:
-                        missing_ranges.append(str(current_range[0]))
-                    else:
-                        missing_ranges.append(f"{current_range[0]}-{current_range[-1]}")
-                    current_range = [year]
+        # Documents as bars
+        bars = ax1_twin.bar(
+            viz_data.index,
+            viz_data["document_count"],
+            alpha=0.3,
+            color=colors[1],
+            width=0.8 if not is_date_index else 365,
+            label="Total Documents",
+        )
+        ax1_twin.set_ylabel(
+            "Total Documents",
+            color=colors[1],
+            fontsize=AXIS_CONFIG["label_fontsize"],
+        )
+        ax1_twin.tick_params(
+            axis="y",
+            labelcolor=colors[1],
+            labelsize=AXIS_CONFIG["tick_labelsize"],
+        )
 
-            # Add the last range
-            if len(current_range) == 1:
-                missing_ranges.append(str(current_range[0]))
-            else:
-                missing_ranges.append(f"{current_range[0]}-{current_range[-1]}")
+        # Combined legend
+        lines = line1 + [bars]
+        labels = ["Identified DIS-PNM co-occurrences", "Total Documents"]
+        ax1.legend(
+            lines,
+            labels,
+            loc="upper left",
+            fontsize=AXIS_CONFIG["legend_fontsize"],
+        )
+        ax1.set_title(
+            f"A. Time Series Data Overview{title_suffix}",
+            fontsize=AXIS_CONFIG["title_fontsize"],
+            fontweight=AXIS_CONFIG["title_fontweight"],
+        )
 
-            summary.append(
-                f"• Missing years: {len(missing_years)} total ({', '.join(missing_ranges)})",
-            )
+        self._configure_date_axis(ax1, is_date_index)
 
-            # Analyze impact of missing years
-            if len(missing_years) > 10:
-                summary.append(
-                    "  - Large gaps may indicate data collection issues or historical events",
-                )
+        # 2. Enhanced Normalized vs Absolute Trends (Takes 2 rows now)
+        ax2 = fig.add_subplot(gs[0:2, 2:4])  # 2 rows, 2 columns
+        normalized_entities = (viz_data["co_count"] / viz_data["document_count"]) * 1000
+
+        ax2.plot(
+            viz_data.index,
+            viz_data["co_count"],
+            "o-",
+            color=colors[0],
+            linewidth=AXIS_CONFIG["line_width"],
+            label="Absolute Counts",
+            alpha=AXIS_CONFIG["line_alpha"],
+        )
+        ax2_norm = ax2.twinx()
+        ax2_norm.plot(
+            viz_data.index,
+            normalized_entities,
+            "s-",
+            color=colors[2],
+            linewidth=AXIS_CONFIG["line_width"],
+            label="Normalized (per 1K docs)",
+            alpha=AXIS_CONFIG["line_alpha"],
+        )
+
+        ax2.set_ylabel(
+            "Absolute Entities",
+            color=colors[0],
+            fontsize=AXIS_CONFIG["label_fontsize"],
+        )
+        ax2_norm.set_ylabel(
+            "Entities per 1K Documents",
+            color=colors[2],
+            fontsize=AXIS_CONFIG["label_fontsize"],
+        )
+        ax2.tick_params(
+            axis="y",
+            labelcolor=colors[0],
+            labelsize=AXIS_CONFIG["tick_labelsize"],
+        )
+        ax2_norm.tick_params(
+            axis="y",
+            labelcolor=colors[2],
+            labelsize=AXIS_CONFIG["tick_labelsize"],
+        )
+
+        # Combined legend
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        lines2_norm, labels2_norm = ax2_norm.get_legend_handles_labels()
+        ax2.legend(
+            lines2 + lines2_norm,
+            labels2 + labels2_norm,
+            loc="upper left",
+            fontsize=AXIS_CONFIG["legend_fontsize"],
+        )
+        ax2.set_title(
+            "B. Absolute vs Normalized Trends",
+            fontsize=AXIS_CONFIG["title_fontsize"],
+            fontweight=AXIS_CONFIG["title_fontweight"],
+        )
+
+        self._configure_date_axis(ax2, is_date_index)
+        ax2.grid(True, alpha=AXIS_CONFIG["grid_alpha"])
+
+        # 3. Model Comparison (AIC/BIC) - adjusted row position
+        ax3 = fig.add_subplot(gs[2, 0:2])
+        self._create_model_comparison_plot(ax3, model_summary, colors)
+
+        # 4. Trend Fitting Visualization - adjusted row position
+        ax4 = fig.add_subplot(gs[2, 2:4])
+        self._create_trend_fitting_plot(ax4, viz_data, colors, is_date_index)
+
+        # 5. Residual Analysis - adjusted row position
+        ax5 = fig.add_subplot(gs[3, 0:2])
+        ax6 = fig.add_subplot(gs[3, 2:4])
+        self._create_residual_plots(ax5, ax6, colors)
+
+        # 6. Autocorrelation and Coefficient Analysis - adjusted row position
+        ax7 = fig.add_subplot(gs[4, 0:2])
+        ax8 = fig.add_subplot(gs[4, 2:4])
+        self._create_autocorrelation_plot(ax7)
+        self._create_coefficient_plot(ax8, coef_table, colors)
+
+        # 7-8. Model Summary Tables (Bottom sections) - adjusted row positions
+        ax9 = fig.add_subplot(gs[5, :])
+        ax10 = fig.add_subplot(gs[6, :])
+        self._create_summary_tables(ax9, ax10, model_summary, coef_table)
+
+        # Add overall title and metadata
+        self._add_title_and_footer(fig, title_suffix)
+
+        return fig
+
+    def _configure_date_axis(self, ax, is_date_index):
+        """Configure date axis with standardized 5-year labels and yearly ticks."""
+        if is_date_index:
+            # Standardized x-axis formatting - every 5 years with yearly ticks
+            ax.xaxis.set_major_locator(mdates.YearLocator(5))
+            ax.xaxis.set_minor_locator(mdates.YearLocator(1))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
         else:
-            summary.append("• ✓ Complete year coverage")
+            # For non-datetime indices (like Year columns)
+            ax.xaxis.set_major_locator(plt.MultipleLocator(5))
+            ax.xaxis.set_minor_locator(plt.MultipleLocator(1))
+        
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
 
-        # Recent data assessment
-        recent_data = self.data[self.data.index.year >= 2020]
-        summary.append(f"• Recent data (2020+): {len(recent_data):,} observations")
-        summary.append(
-            f"• Zero-inflation level: {(self.data['co_count'] == 0).mean()*100:.1f}%",
-        )
+    def _create_model_comparison_plot(self, ax, model_summary, colors):
+        """Create model comparison plot."""
+        if len(model_summary) > 0:
+            models = model_summary["Model"].values
+            aic_values = model_summary["AIC"].values
+            
+            ax.bar(models, aic_values, color=colors[0], alpha=0.7)
+            ax.set_title("Model Comparison (AIC)", fontsize=12, fontweight="bold")
+            ax.set_ylabel("AIC")
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+        else:
+            ax.text(0.5, 0.5, "No model data available", ha='center', va='center', transform=ax.transAxes)
 
-        return "\n".join(summary)
+    def _create_trend_fitting_plot(self, ax, viz_data, colors, is_date_index):
+        """Create trend fitting visualization."""
+        ax.scatter(viz_data.index, viz_data["co_count"], alpha=0.6, color=colors[0], s=10)
+        ax.set_title("Trend Fitting", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Co-occurrence Count")
+        
+        self._configure_date_axis(ax, is_date_index)
+        ax.grid(True, alpha=0.3)
 
-    def save_results(self) -> None:
-        """Save all analysis results to files."""
-        # Create filename suffix for filtered data
-        filename_suffix = ""
-        if self.start_date or self.end_date:
-            date_parts = []
-            if self.start_date:
-                date_parts.append(f"from_{self.start_date.strftime('%Y%m%d')}")
-            if self.end_date:
-                date_parts.append(f"to_{self.end_date.strftime('%Y%m%d')}")
-            filename_suffix = f"_{'_'.join(date_parts)}"
-
-        # Save model summary
-        model_summary = self.create_model_summary_table()
-        model_summary.to_csv(
-            f"{self.output_dir}/real_data_report/model_summary{filename_suffix}.csv",
-            index=False,
-        )
-
-        # Save coefficients table
-        coef_table = self.create_coefficients_table()
-        coef_table.to_csv(
-            f"{self.output_dir}/real_data_report/coefficients_table{filename_suffix}.csv",
-            index=False,
-        )
-
-        # Save text summary
-        text_summary = self.generate_text_summary()
-        with open(
-            f"{self.output_dir}/real_data_report/analysis_summary{filename_suffix}.txt",
-            "w",
-        ) as f:
-            f.write(text_summary)
-
-        # Save processed data summary with filter information
-        data_summary = {
-            "total_observations": len(self.data),
-            "date_range_start": str(self.data.index.min().date()),
-            "date_range_end": str(self.data.index.max().date()),
-            "filter_start_date": (
-                str(self.start_date.date()) if self.start_date else "None"
-            ),
-            "filter_end_date": str(self.end_date.date()) if self.end_date else "None",
-            "years_covered": self.data.index.year.nunique(),
-            "mean_co_occurrence": self.data["co_count"].mean(),
-            "max_co_occurrence": self.data["co_count"].max(),
-            "zero_percentage": (self.data["co_count"] == 0).mean() * 100,
-        }
-
-        pd.DataFrame([data_summary]).to_csv(
-            f"{self.output_dir}/real_data_report/data_summary{filename_suffix}.csv",
-            index=False,
-        )
-
-        print("\nAdditional files saved:")
-        print(
-            f"- Model summary: {self.output_dir}/real_data_report/model_summary{filename_suffix}.csv",
-        )
-        print(
-            f"- Coefficients: {self.output_dir}/real_data_report/coefficients_table{filename_suffix}.csv",
-        )
-        print(
-            f"- Text summary: {self.output_dir}/real_data_report/analysis_summary{filename_suffix}.txt",
-        )
-        print(
-            f"- Data summary: {self.output_dir}/real_data_report/data_summary{filename_suffix}.csv",
-        )
+    def _prepare_modeling_data(self) -> pd.DataFrame:
+        """Prepare data for modeling."""
+        return self.data.copy()
 
     def run_complete_analysis(self) -> None:
-        """Run the complete analysis pipeline."""
-        print("=" * 80)
-        print("REAL DATA COMPREHENSIVE TIME SERIES ANALYSIS")
-        print("=" * 80)
-
-        # Run all analyses
+        """Run complete analysis pipeline."""
+        print("Starting complete analysis...")
         self.run_all_analyses()
-
-        # Create visualizations
+        print("Creating comprehensive visualization...")
         self.create_comprehensive_visualization()
-
-        # Save results
-        self.save_results()
-
-        # Print summary
-        print("\n" + self.generate_text_summary())
-
-        print("\n" + "=" * 80)
-        print("REAL DATA ANALYSIS COMPLETED")
-        print("=" * 80)
-
+        print("Analysis complete!")
 
 def main() -> None:
     """Main function to run the real data analysis."""

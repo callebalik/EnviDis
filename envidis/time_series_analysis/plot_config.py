@@ -113,6 +113,12 @@ DEFAULT_PLOT_PARAMS = {
         "enable_filtering": True,
         "y_axis_percentile": 95,  # For y-axis limits
     },
+    "axes": {
+        "major_tick_years": 5,  # Major tick and label every 5 years
+        "minor_tick_years": 1,  # Minor tick every year
+        "label_rotation": 45,   # Rotation for better readability
+        "date_format": "%Y",    # Year format for labels
+    },
 }
 
 # Plot-specific configurations
@@ -126,6 +132,12 @@ PLOT_CONFIGS = {
         "outlier_percentile": 99.7,  # Configurable outlier threshold
         "filter_sparse_years": True,  # Remove isolated early years
         "min_year_density": 0.01,  # Minimum data density threshold
+        "x_axis": {
+            "major_locator_years": 5,
+            "minor_locator_years": 1,
+            "label_rotation": 45,
+            "date_format": "%Y",
+        },
     },
     "yearly_aggregated": {
         "marker": "o",
@@ -137,6 +149,11 @@ PLOT_CONFIGS = {
         "remove_outliers": False,  # Keep as False for yearly data
         "outlier_percentile": 99.7,  # Even when disabled, have threshold available
         "filter_sparse_years": True,  # Keep sparse year filtering
+        "x_axis": {
+            "major_locator_years": 5,
+            "minor_locator_years": 1,
+            "label_rotation": 45,
+        },
     },
     "distribution": {
         "bins": 50,
@@ -172,6 +189,11 @@ PLOT_CONFIGS = {
         "remove_outliers": False,  # Keep all data for trend analysis
         "outlier_percentile": 99.7,  # Configurable threshold
         "y_limit_percentile": 95,  # Use 95th percentile for y-axis upper limit
+        "x_axis": {
+            "major_locator_years": 5,
+            "minor_locator_years": 1,
+            "label_rotation": 45,
+        },
     },
     "zero_inflation": {
         "colors_keys": ["zero", "nonzero"],
@@ -184,6 +206,11 @@ PLOT_CONFIGS = {
         "remove_outliers": False,  # Keep all data for recent trend analysis
         "outlier_percentile": 99.7,  # Configurable threshold
         "y_limit_percentile": 95,  # Use 95th percentile for y-axis upper limit
+        "x_axis": {
+            "major_locator_years": 5,
+            "minor_locator_years": 1,
+            "label_rotation": 45,
+        },
     },
     "decomposition": {
         "original_alpha": 0.4,
@@ -196,6 +223,11 @@ PLOT_CONFIGS = {
         "remove_outliers": False,  # Keep all data for decomposition analysis
         "outlier_percentile": 99.7,  # Configurable threshold
         "y_limit_percentile": 95,  # Use 95th percentile for y-axis upper limit
+        "x_axis": {
+            "major_locator_years": 5,
+            "minor_locator_years": 1,
+            "label_rotation": 45,
+        },
     },
     "publication_volume": {
         "doc_color": "steelblue",
@@ -203,6 +235,11 @@ PLOT_CONFIGS = {
         "alpha": 0.7,
         "remove_outliers": False,  # Keep all data for publication volume context
         "outlier_percentile": 99.7,  # Configurable threshold
+        "x_axis": {
+            "major_locator_years": 5,
+            "minor_locator_years": 1,
+            "label_rotation": 45,
+        },
     },
 }
 

@@ -253,6 +253,7 @@ class PlotOrchestrator:
             plot_yearly_aggregated(
                 yearly_data,
                 ax=ax2,
+                best_model=best_model,  # Pass the best model
                 title=f"B. Annual Co-occurrence Totals vs. Publication Rate{title_suffix}",
                 **kwargs.get("yearly_aggregated", {}),
             )
