@@ -371,6 +371,24 @@ class ComprehensiveAnalysisReport:
         best_model = None
         if "best_trend" in self.models and self.models["best_trend"] is not None:
             best_model = self.models["best_trend"]
+        elif (
+            self.trend_fitter
+            and hasattr(self.trend_fitter, "poly2_results")
+            and self.trend_fitter.poly2_results
+        ):
+            best_model = self.trend_fitter.poly2_results
+        elif (
+            self.trend_fitter
+            and hasattr(self.trend_fitter, "poly3_results")
+            and self.trend_fitter.poly3_results
+        ):
+            best_model = self.trend_fitter.poly3_results
+        elif (
+            self.trend_fitter
+            and hasattr(self.trend_fitter, "linear_results")
+            and self.trend_fitter.linear_results
+        ):
+            best_model = self.trend_fitter.linear_results
 
         # Get diagnostic results
         diagnostics = self.create_diagnostic_summary()
@@ -422,9 +440,13 @@ class ComprehensiveAnalysisReport:
             color=colors[0],
             linewidth=2,
             markersize=4,
-            label="Observed Entities",
+            label="Identified DIS-PNM co-occurrences",
         )
-        ax1.set_ylabel("Observed Entities", color=colors[0], fontsize=10)
+        ax1.set_ylabel(
+            "Identified DIS-PNM co-occurrences",
+            color=colors[0],
+            fontsize=10,
+        )
         ax1.tick_params(axis="y", labelcolor=colors[0])
         ax1.grid(True, alpha=0.3)
 
@@ -442,7 +464,7 @@ class ComprehensiveAnalysisReport:
 
         # Combined legend
         lines = line1 + [bars]
-        labels = ["Observed Entities", "Total Documents"]
+        labels = ["Identified DIS-PNM co-occurrences", "Total Documents"]
         ax1.legend(lines, labels, loc="upper left", fontsize=9)
         ax1.set_title("A. Time Series Data Overview", fontsize=12, fontweight="bold")
 
@@ -597,7 +619,7 @@ class ComprehensiveAnalysisReport:
             alpha=0.6,
             color=colors[0],
             s=30,
-            label="Observed Data",
+            label="Identified DIS-PNM co-occurrences",
         )
 
         # Plot trend models if available
@@ -644,7 +666,7 @@ class ComprehensiveAnalysisReport:
                     label="Cubic",
                 )
 
-        ax4.set_ylabel("Observed Entities", fontsize=10)
+        ax4.set_ylabel("Identified DIS-PNM co-occurrences", fontsize=10)
         if is_date_index:
             ax4.set_xlabel("Date", fontsize=10)
             ax4.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
