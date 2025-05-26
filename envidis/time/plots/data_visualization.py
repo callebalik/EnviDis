@@ -175,7 +175,7 @@ def plot_entities_normalized_and_absolute(data, save_path=None):
     return data_with_normalized
 
 
-def plot_documents_over_time(data, save_path=None) -> None:
+def plot_documents_over_time(data: pd.DataFrame, save_path: str | None = None) -> None:
     """Plot total documents over time.
 
     Parameters
@@ -204,7 +204,10 @@ def plot_documents_over_time(data, save_path=None) -> None:
     plt.show()
 
 
-def plot_entities_vs_documents(data, save_path=None) -> None:
+def plot_entities_vs_documents(
+    data: pd.DataFrame,
+    save_path: str | None = None,
+) -> None:
     """Plot observed entities vs total documents with year as color.
 
     Parameters
