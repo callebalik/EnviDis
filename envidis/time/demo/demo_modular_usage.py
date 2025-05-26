@@ -1,5 +1,4 @@
-"""
-Demo Script: Using Individual Components
+"""Demo Script: Using Individual Components
 This script demonstrates how to use each modular component individually.
 """
 
@@ -81,7 +80,7 @@ def demo_trend_modeling(data):
     return comparison["best_model"]
 
 
-def demo_autocorrelation_analysis(best_model, data):
+def demo_autocorrelation_analysis(best_model, data) -> None:
     """Demonstrate autocorrelation analysis."""
     print("\n" + "=" * 50)
     print("DEMO: Autocorrelation Analysis")
@@ -110,7 +109,7 @@ def demo_autocorrelation_analysis(best_model, data):
         print("Lagged model fitted successfully!")
 
 
-def demo_custom_analysis():
+def demo_custom_analysis() -> None:
     """Demonstrate custom analysis workflow."""
     print("\n" + "=" * 50)
     print("DEMO: Custom Analysis Workflow")

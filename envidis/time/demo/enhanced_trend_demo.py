@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""
-Enhanced Trend Visualization Demo
+"""Enhanced Trend Visualization Demo
 This script demonstrates the new enhanced trend plotting features with document histograms and normalization.
 """
 
-import sys
 import os
+import sys
 
 # Add the analysis directory to Python path
 sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
 
-from envidis.time.demo.data_generation import generate_sample_data
-from envidis.time.plots.data_visualization import (
-    plot_entities_with_documents_histogram,
-    plot_entities_normalized_and_absolute,
-    create_all_plots,
-)
 from trend_modeling import TrendModelFitter
 
+from envidis.time.demo.data_generation import generate_sample_data
+from envidis.time.plots.data_visualization import (
+    create_all_plots,
+    plot_entities_normalized_and_absolute,
+    plot_entities_with_documents_histogram,
+)
 
-def demo_enhanced_visualizations():
+
+def demo_enhanced_visualizations() -> None:
     """Demonstrate the enhanced visualization capabilities."""
     print("=" * 70)
     print("ENHANCED TREND VISUALIZATION DEMO")
@@ -28,7 +28,10 @@ def demo_enhanced_visualizations():
     # Generate sample data
     print("Generating sample data with complex trends...")
     data = generate_sample_data(
-        start_year=1990, end_year=2024, seed=42, generation_type="non_constant_upward"
+        start_year=1990,
+        end_year=2024,
+        seed=42,
+        generation_type="non_constant_upward",
     )
     print(f"Generated data shape: {data.shape}")
     print(f"Year range: {data.index.min()} - {data.index.max()}")
@@ -36,13 +39,13 @@ def demo_enhanced_visualizations():
     # Show basic statistics
     print("\nData Summary:")
     print(
-        f"  Entities range: {data['ObservedEntities'].min()} - {data['ObservedEntities'].max()}"
+        f"  Entities range: {data['ObservedEntities'].min()} - {data['ObservedEntities'].max()}",
     )
     print(
-        f"  Documents range: {data['TotalDocuments'].min()} - {data['TotalDocuments'].max()}"
+        f"  Documents range: {data['TotalDocuments'].min()} - {data['TotalDocuments'].max()}",
     )
     print(
-        f"  Mean entities per 1000 docs: {(data['ObservedEntities'] / data['TotalDocuments'] * 1000).mean():.2f}"
+        f"  Mean entities per 1000 docs: {(data['ObservedEntities'] / data['TotalDocuments'] * 1000).mean():.2f}",
     )
 
     # Fit trend models (always on absolute counts)
@@ -67,7 +70,7 @@ def demo_enhanced_visualizations():
 
     print("\nCreating normalized visualization...")
     normalized_viz = trend_fitter.plot_enhanced_trends_with_documents(
-        normalize_visualization=True
+        normalize_visualization=True,
     )
 
     print("\n" + "=" * 50)
@@ -77,7 +80,7 @@ def demo_enhanced_visualizations():
 
     print("\nCreating absolute visualization...")
     absolute_viz = trend_fitter.plot_enhanced_trends_with_documents(
-        normalize_visualization=False
+        normalize_visualization=False,
     )
 
     # Compare the approaches
@@ -163,7 +166,7 @@ def demo_enhanced_visualizations():
         print(f"  Spline: {trend_fitter.spline_results.aic:.2f}")
 
 
-def demo_batch_output():
+def demo_batch_output() -> None:
     """Demonstrate batch output to directory."""
     print("\n" + "=" * 70)
     print("BATCH OUTPUT DEMO")
@@ -202,7 +205,7 @@ def demo_batch_output():
         trend_fitter = TrendModelFitter(data)
         trend_fitter.fit_all_models()
         trend_fitter.plot_enhanced_trends_with_documents(
-            f"{scenario_dir}/enhanced_trend_analysis.png"
+            f"{scenario_dir}/enhanced_trend_analysis.png",
         )
 
         print(f"  Saved plots to: {scenario_dir}")

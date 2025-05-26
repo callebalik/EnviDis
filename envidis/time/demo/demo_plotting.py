@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
-"""
-Demo Script: Showcasing Model Plotting Functionality
-This script demonstrates the new plotting features in autocorrelation_analysis.py
+"""Demo Script: Showcasing Model Plotting Functionality
+This script demonstrates the new plotting features in autocorrelation_analysis.py.
 """
 
-import sys
 import os
+import sys
 
 # Add the analysis directory to Python path
 sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
 
-from envidis.time.demo.data_generation import generate_sample_data
-from envidis.time.analysis.basic_model_fitting import BasicModelFitter
 from envidis.time.analysis.autocorrelation_analysis import (
     AutocorrelationAnalyzer,
     LaggedModelFitter,
 )
+from envidis.time.analysis.basic_model_fitting import BasicModelFitter
+from envidis.time.demo.data_generation import generate_sample_data
 
 
-def demo_model_plotting():
+def demo_model_plotting() -> None:
     """Demonstrate the new plotting functionality."""
     print("=" * 60)
     print("DEMO: Model Plotting Functionality")
@@ -72,7 +71,7 @@ def demo_model_plotting():
     print("=" * 60)
 
 
-def demo_batch_plotting():
+def demo_batch_plotting() -> None:
     """Demonstrate batch plotting with output directory."""
     print("\n" + "=" * 60)
     print("DEMO: Batch Plotting to Directory")
