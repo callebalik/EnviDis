@@ -220,7 +220,7 @@ class ComprehensiveAnalysisReport:
                     "Log-Likelihood": f"{model.llf:.2f}",
                     "Deviance": f"{model.deviance:.2f}",
                     "Pseudo R²": f"{1 - (model.deviance / model.null_deviance):.4f}",
-                    "N": model.nobs,
+                    "N Observations": model.nobs,
                 }
                 model_summaries.append(summary)
 
@@ -300,6 +300,48 @@ class ComprehensiveAnalysisReport:
 
     def create_comprehensive_visualization(self):
         """Create a comprehensive one-page visualization."""
+        # Import the plot orchestrator
+        try:
+            from envidis.time_series_analysis.plot_orchestrator import PlotOrchestrator
+
+            # Create orchestrator
+            orchestrator = PlotOrchestrator()
+
+            # Prepare yearly data if needed
+            yearly_data = None
+            if len(self.data) > 0:
+                yearly_data = (
+                    self.data.groupby(self.data.index.year)
+                    .agg(
+                        {
+                            "ObservedEntities": "sum",
+                            "TotalDocuments": "sum",
+                        }
+                    )
+                    .reset_index()
+                )
+                yearly_data.columns = ["Year", "ObservedEntities", "TotalDocuments"]
+
+            # Create model summary and coefficients tables
+            model_summary = self.create_model_summary_table()
+            coef_table = self.create_coefficients_table()
+
+            # Create the comprehensive plot using the orchestrator
+            fig = orchestrator.create_comprehensive_plot(
+                data=self.data,
+                yearly_data=yearly_data,
+                model_summary=model_summary,
+                coef_table=coef_table,
+            )
+
+            return fig
+
+        except ImportError:
+            # Fallback to original method if orchestrator not available
+            return self._create_original_visualization()
+
+    def _create_original_visualization(self):
+        """Original visualization method as fallback."""
         # Set up the figure with subplots
         fig = plt.figure(figsize=(20, 24))
         gs = fig.add_gridspec(6, 4, hspace=0.4, wspace=0.3)

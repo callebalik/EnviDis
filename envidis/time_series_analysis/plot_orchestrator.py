@@ -95,10 +95,10 @@ class PlotOrchestrator:
         # Use gridspec for better control over subplot layout
         import matplotlib.gridspec as gridspec
 
-        # Adjust spacing for A4 width
+        # Adjust spacing for A4 width - plots A and B get full rows
         gs = gridspec.GridSpec(6, 3, figure=fig, hspace=0.4, wspace=0.3)
 
-        # Plot 1: Raw time series (full width - row 1)
+        # Plot A: Raw time series (FULL ROW 1)
         ax1 = fig.add_subplot(gs[0, :])  # Full width of first row
         plot_raw_timeseries(
             data,
@@ -107,7 +107,7 @@ class PlotOrchestrator:
             **kwargs.get("raw_timeseries", {}),
         )
 
-        # Plot 2: Yearly aggregated data (full width - row 2)
+        # Plot B: Yearly aggregated data (FULL ROW 2)
         if yearly_data is not None:
             ax2 = fig.add_subplot(gs[1, :])  # Full width of second row
             plot_yearly_aggregated(
@@ -117,105 +117,105 @@ class PlotOrchestrator:
                 **kwargs.get("yearly_aggregated", {}),
             )
 
-        # Plot 2b: Publication volume context (full width - row 3)
+        # Plot C: Publication volume context (FULL ROW 3)
         if yearly_data is not None and "TotalDocuments" in yearly_data.columns:
-            ax2b = fig.add_subplot(gs[2, :])  # Full width of third row
+            ax3 = fig.add_subplot(gs[2, :])  # Full width of third row
             from envidis.time_series_analysis.plot_functions import (
                 plot_publication_volume_context,
             )
 
             plot_publication_volume_context(
                 yearly_data,
-                ax=ax2b,
-                title=f"B2. Publication Volume Context{title_suffix}",
+                ax=ax3,
+                title=f"C. Publication Volume Context{title_suffix}",
             )
 
         # Remaining plots in 3-column layout starting from row 4
         recent_start = max(2020, end_year - 5)
 
-        # Plot 3: Distribution (row 4, col 1)
-        ax3 = fig.add_subplot(gs[3, 0])
+        # Plot D: Distribution (row 4, col 1)
+        ax4 = fig.add_subplot(gs[3, 0])
         plot_distribution(
             data,
-            ax=ax3,
-            title=f"C. Distribution of Co-occurrence Counts (Log Scale){title_suffix}",
+            ax=ax4,
+            title=f"D. Distribution of Co-occurrence Counts (Log Scale){title_suffix}",
             **kwargs.get("distribution", {}),
         )
 
-        # Plot 4: Monthly patterns (row 4, col 2)
-        ax4 = fig.add_subplot(gs[3, 1])
+        # Plot E: Monthly patterns (row 4, col 2)
+        ax5 = fig.add_subplot(gs[3, 1])
         plot_monthly_patterns(
             data,
-            ax=ax4,
-            title=f"D. Monthly Pattern ({recent_start}-{end_year}){title_suffix}",
+            ax=ax5,
+            title=f"E. Monthly Pattern ({recent_start}-{end_year}){title_suffix}",
             start_year=recent_start,
             **kwargs.get("monthly_patterns", {}),
         )
 
-        # Plot 5: Scatter plot (row 4, col 3)
-        ax5 = fig.add_subplot(gs[3, 2])
+        # Plot F: Scatter plot (row 4, col 3)
+        ax6 = fig.add_subplot(gs[3, 2])
         plot_scatter_documents_vs_cooccurrence(
             data,
-            ax=ax5,
-            title=f"E. Documents vs Co-occurrences{title_suffix}",
+            ax=ax6,
+            title=f"F. Documents vs Co-occurrences{title_suffix}",
             **kwargs.get("scatter", {}),
         )
 
-        # Plot 6: Model summary table (row 5, col 1)
-        ax6 = fig.add_subplot(gs[4, 0])
+        # Plot G: Model summary table (row 5, col 1)
+        ax7 = fig.add_subplot(gs[4, 0])
         if model_summary is not None:
             plot_model_summary_table(
                 model_summary,
-                ax=ax6,
-                title=f"F. Model Comparison{title_suffix}",
+                ax=ax7,
+                title=f"G. Model Comparison{title_suffix}",
                 **kwargs.get("model_summary", {}),
             )
 
-        # Plot 7: Trend analysis (row 5, col 2)
-        ax7 = fig.add_subplot(gs[4, 1])
+        # Plot H: Trend analysis (row 5, col 2)
+        ax8 = fig.add_subplot(gs[4, 1])
         if yearly_data is not None:
             plot_trend_analysis(
                 yearly_data,
-                ax=ax7,
-                title=f"G. Long-term Trend Analysis{title_suffix}",
+                ax=ax8,
+                title=f"H. Long-term Trend Analysis{title_suffix}",
                 **kwargs.get("trend_analysis", {}),
             )
 
-        # Plot 8: Zero inflation pie (row 5, col 3)
-        ax8 = fig.add_subplot(gs[4, 2])
+        # Plot I: Zero inflation pie (row 5, col 3)
+        ax9 = fig.add_subplot(gs[4, 2])
         plot_zero_inflation_pie(
             data,
-            ax=ax8,
-            title=f"H. Zero-Inflation Analysis{title_suffix}",
+            ax=ax9,
+            title=f"I. Zero-Inflation Analysis{title_suffix}",
             **kwargs.get("zero_inflation", {}),
         )
 
-        # Plot 9: Recent trend bar (row 6, col 1)
-        ax9 = fig.add_subplot(gs[5, 0])
+        # Plot J: Recent trend bar (row 6, col 1)
+        ax10 = fig.add_subplot(gs[5, 0])
         plot_recent_trend_bar(
             data,
-            ax=ax9,
-            title=f"I. Recent Trend ({recent_start}-{end_year}){title_suffix}",
+            ax=ax10,
+            title=f"J. Recent Trend ({recent_start}-{end_year}){title_suffix}",
             start_year=recent_start,
             **kwargs.get("recent_trend", {}),
         )
 
-        # Plot 10: Coefficients table (row 6, col 2)
-        ax10 = fig.add_subplot(gs[5, 1])
+        # Plot K: Coefficients table (row 6, col 2)
+        ax11 = fig.add_subplot(gs[5, 1])
         if coef_table is not None:
             plot_coefficients_table(
                 coef_table,
-                ax=ax10,
-                title=f"J. Best Model Coefficients{title_suffix}",
+                ax=ax11,
+                title=f"K. Best Model Coefficients{title_suffix}",
                 **kwargs.get("coefficients", {}),
             )
 
-        # Plot 11: Data quality table (row 6, col 3)
-        ax11 = fig.add_subplot(gs[5, 2])
+        # Plot L: Data quality table (row 6, col 3)
+        ax12 = fig.add_subplot(gs[5, 2])
         plot_data_quality_table(
             data,
-            ax=ax11,
-            title=f"K. Data Quality Summary{title_suffix}",
+            ax=ax12,
+            title=f"L. Data Quality Summary{title_suffix}",
             **kwargs.get("data_quality", {}),
         )
 

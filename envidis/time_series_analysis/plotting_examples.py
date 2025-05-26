@@ -124,11 +124,11 @@ def example_orchestrator_usage() -> None:
     # Create orchestrator
     orchestrator = PlotOrchestrator(output_dir="./example_plots")
 
-    # Example 1: Comprehensive plot with default settings
+    # Example 1: Comprehensive plot with default settings - now with A and B on separate full rows
     fig = orchestrator.create_comprehensive_plot(data, yearly_data=yearly_data)
     orchestrator.save_plot(fig, "comprehensive_default.png")
     plt.close()
-    print("✓ Comprehensive plot (default) saved")
+    print("✓ Comprehensive plot (A and B on full rows) saved")
 
     # Example 2: Comprehensive plot with custom styling
     custom_kwargs = {
