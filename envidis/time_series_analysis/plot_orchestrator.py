@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy import stats
+from statsmodels.graphics.tsaplots import plot_acf
 
 from envidis.time_series_analysis.plot_functions import (
     plot_coefficients_table,
@@ -41,6 +43,120 @@ class PlotOrchestrator:
         self.output_dir = output_dir or "./plots"
         os.makedirs(self.output_dir, exist_ok=True)
 
+    def plot_autocorrelation(
+        self, best_model, ax, title="Autocorrelation Function of Residuals", **kwargs
+    ) -> None:
+        """Plot autocorrelation function of residuals."""
+        if best_model is not None and hasattr(best_model, "resid_pearson"):
+            try:
+                plot_acf(
+                    best_model.resid_pearson,
+                    lags=min(15, len(best_model.resid_pearson) // 4),
+                    ax=ax,
+                    alpha=0.05,
+                )
+                ax.set_title(title, fontsize=9, fontweight="bold")
+                ax.grid(True, alpha=0.3)
+            except Exception as e:
+                ax.text(
+                    0.5,
+                    0.5,
+                    f"Autocorrelation\nanalysis failed\n{str(e)[:50]}...",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                    fontsize=8,
+                )
+                ax.set_title(f"{title} (Failed)", fontsize=9, fontweight="bold")
+        else:
+            ax.text(
+                0.5,
+                0.5,
+                "No model available\nfor autocorrelation",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                fontsize=8,
+            )
+            ax.set_title(f"{title} (N/A)", fontsize=9, fontweight="bold")
+
+    def plot_qq_plot(
+        self, best_model, ax, title="Q-Q Plot (Normality Check)", **kwargs
+    ) -> None:
+        """Plot Q-Q plot for residuals."""
+        if best_model is not None and hasattr(best_model, "resid_pearson"):
+            try:
+                stats.probplot(best_model.resid_pearson, dist="norm", plot=ax)
+                ax.set_title(title, fontsize=9, fontweight="bold")
+                ax.grid(True, alpha=0.3)
+            except Exception as e:
+                ax.text(
+                    0.5,
+                    0.5,
+                    f"Q-Q plot\nanalysis failed\n{str(e)[:50]}...",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                    fontsize=8,
+                )
+                ax.set_title(f"{title} (Failed)", fontsize=9, fontweight="bold")
+        else:
+            ax.text(
+                0.5,
+                0.5,
+                "No model available\nfor Q-Q plot",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                fontsize=8,
+            )
+            ax.set_title(f"{title} (N/A)", fontsize=9, fontweight="bold")
+
+    def plot_residuals_vs_fitted(
+        self, best_model, ax, title="Residuals vs Fitted Values", **kwargs
+    ) -> None:
+        """Plot residuals vs fitted values."""
+        if (
+            best_model is not None
+            and hasattr(best_model, "fittedvalues")
+            and hasattr(best_model, "resid_pearson")
+        ):
+            try:
+                ax.scatter(
+                    best_model.fittedvalues,
+                    best_model.resid_pearson,
+                    alpha=0.6,
+                    s=8,
+                    color="blue",
+                )
+                ax.axhline(y=0, color="red", linestyle="--", alpha=0.8)
+                ax.set_xlabel("Fitted Values", fontsize=8)
+                ax.set_ylabel("Standardized Residuals", fontsize=8)
+                ax.set_title(title, fontsize=9, fontweight="bold")
+                ax.grid(True, alpha=0.3)
+            except Exception as e:
+                ax.text(
+                    0.5,
+                    0.5,
+                    f"Residual plot\nfailed\n{str(e)[:50]}...",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                    fontsize=8,
+                )
+                ax.set_title(f"{title} (Failed)", fontsize=9, fontweight="bold")
+        else:
+            ax.text(
+                0.5,
+                0.5,
+                "No model available\nfor residual analysis",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                fontsize=8,
+            )
+            ax.set_title(f"{title} (N/A)", fontsize=9, fontweight="bold")
+
     def create_comprehensive_plot(
         self,
         data: pd.DataFrame,
@@ -48,15 +164,17 @@ class PlotOrchestrator:
         monthly_data: pd.DataFrame = None,
         model_summary: pd.DataFrame = None,
         coef_table: pd.DataFrame = None,
-        layout: tuple[int, int] = (6, 3),  # Updated to 6 rows for additional context
-        figsize: tuple[int, int] = (
-            8.0,
-            24,
-        ),  # Changed to A4 width (8 inches) with proportional height
+        best_model=None,
+        models=None,
+        trend_fitter=None,
+        diagnostics=None,
+        use_real_data=False,
+        layout: tuple[int, int] = (8, 3),  # Updated to 8 rows for additional plots
+        figsize: tuple[int, int] = (8.0, 28),  # Increased height for additional plots
         title_suffix: str = "",
         **kwargs,
     ) -> plt.Figure:
-        """Create comprehensive plot with all analysis visualizations.
+        """Create comprehensive plot with all analysis visualizations including autocorrelation, Q-Q plots, and model summaries.
 
         Parameters
         ----------
@@ -70,19 +188,29 @@ class PlotOrchestrator:
             Model summary statistics
         coef_table : pd.DataFrame, optional
             Coefficients table
+        best_model : optional
+            Best fitted model for residual analysis
+        models : dict, optional
+            Dictionary of fitted models
+        trend_fitter : optional
+            Trend fitter object
+        diagnostics : dict, optional
+            Diagnostic test results
+        use_real_data : bool, optional
+            Whether using real data
         layout : tuple
             Grid layout for subplots (rows, cols)
         figsize : tuple
-            Figure size (width optimized for A4 paper: 8 inches)
+            Figure size
         title_suffix : str
-            Suffix to add to plot titles (e.g., date range filter info)
+            Suffix to add to plot titles
         **kwargs : dict
             Additional parameters for individual plots
 
         Returns
         -------
         plt.Figure
-            The complete figure with all subplots
+            The complete figure with all subplots including autocorrelation and Q-Q plots
 
         """
         fig = plt.figure(figsize=figsize)
@@ -95,11 +223,11 @@ class PlotOrchestrator:
         # Use gridspec for better control over subplot layout
         import matplotlib.gridspec as gridspec
 
-        # Adjust spacing for A4 width - plots A and B get full rows
-        gs = gridspec.GridSpec(6, 3, figure=fig, hspace=0.4, wspace=0.3)
+        # Adjust spacing for comprehensive layout with autocorrelation and Q-Q plots
+        gs = gridspec.GridSpec(8, 3, figure=fig, hspace=0.4, wspace=0.3)
 
         # Plot A: Raw time series (FULL ROW 1)
-        ax1 = fig.add_subplot(gs[0, :])  # Full width of first row
+        ax1 = fig.add_subplot(gs[0, :])
         plot_raw_timeseries(
             data,
             ax=ax1,
@@ -109,7 +237,7 @@ class PlotOrchestrator:
 
         # Plot B: Yearly aggregated data (FULL ROW 2)
         if yearly_data is not None:
-            ax2 = fig.add_subplot(gs[1, :])  # Full width of second row
+            ax2 = fig.add_subplot(gs[1, :])
             plot_yearly_aggregated(
                 yearly_data,
                 ax=ax2,
@@ -119,7 +247,7 @@ class PlotOrchestrator:
 
         # Plot C: Publication volume context (FULL ROW 3)
         if yearly_data is not None and "TotalDocuments" in yearly_data.columns:
-            ax3 = fig.add_subplot(gs[2, :])  # Full width of third row
+            ax3 = fig.add_subplot(gs[2, :])
             from envidis.time_series_analysis.plot_functions import (
                 plot_publication_volume_context,
             )
@@ -130,7 +258,7 @@ class PlotOrchestrator:
                 title=f"C. Publication Volume Context{title_suffix}",
             )
 
-        # Remaining plots in 3-column layout starting from row 4
+        # Row 4: Basic analysis plots
         recent_start = max(2020, end_year - 5)
 
         # Plot D: Distribution (row 4, col 1)
@@ -161,6 +289,7 @@ class PlotOrchestrator:
             **kwargs.get("scatter", {}),
         )
 
+        # Row 5: Model analysis plots
         # Plot G: Model summary table (row 5, col 1)
         ax7 = fig.add_subplot(gs[4, 0])
         if model_summary is not None:
@@ -190,48 +319,136 @@ class PlotOrchestrator:
             **kwargs.get("zero_inflation", {}),
         )
 
-        # Plot J: Recent trend bar (row 6, col 1)
+        # Row 6: Residual analysis plots (NEW)
+        # Plot J: Residuals vs Fitted (row 6, col 1)
         ax10 = fig.add_subplot(gs[5, 0])
+        self.plot_residuals_vs_fitted(
+            best_model,
+            ax=ax10,
+            title=f"J. Residuals vs Fitted Values{title_suffix}",
+        )
+
+        # Plot K: Q-Q Plot (row 6, col 2)
+        ax11 = fig.add_subplot(gs[5, 1])
+        self.plot_qq_plot(
+            best_model,
+            ax=ax11,
+            title=f"K. Q-Q Plot (Normality Check){title_suffix}",
+        )
+
+        # Plot L: Autocorrelation (row 6, col 3)
+        ax12 = fig.add_subplot(gs[5, 2])
+        self.plot_autocorrelation(
+            best_model,
+            ax=ax12,
+            title=f"L. Autocorrelation Function{title_suffix}",
+        )
+
+        # Row 7: Additional analysis plots
+        # Plot M: Recent trend bar (row 7, col 1)
+        ax13 = fig.add_subplot(gs[6, 0])
         plot_recent_trend_bar(
             data,
-            ax=ax10,
-            title=f"J. Recent Trend ({recent_start}-{end_year}){title_suffix}",
+            ax=ax13,
+            title=f"M. Recent Trend ({recent_start}-{end_year}){title_suffix}",
             start_year=recent_start,
             **kwargs.get("recent_trend", {}),
         )
 
-        # Plot K: Coefficients table (row 6, col 2)
-        ax11 = fig.add_subplot(gs[5, 1])
+        # Plot N: Coefficients table (row 7, col 2)
+        ax14 = fig.add_subplot(gs[6, 1])
         if coef_table is not None:
             plot_coefficients_table(
                 coef_table,
-                ax=ax11,
-                title=f"K. Best Model Coefficients{title_suffix}",
+                ax=ax14,
+                title=f"N. Best Model Coefficients{title_suffix}",
                 **kwargs.get("coefficients", {}),
             )
 
-        # Plot L: Data quality table (row 6, col 3)
-        ax12 = fig.add_subplot(gs[5, 2])
+        # Plot O: Data quality table (row 7, col 3)
+        ax15 = fig.add_subplot(gs[6, 2])
         plot_data_quality_table(
             data,
-            ax=ax12,
-            title=f"L. Data Quality Summary{title_suffix}",
+            ax=ax15,
+            title=f"O. Data Quality Summary{title_suffix}",
             **kwargs.get("data_quality", {}),
         )
 
-        # Adjust font sizes for A4 width
+        # Row 8: Model summary tables (FULL ROW 8)
+        ax16 = fig.add_subplot(gs[7, :])
+        if model_summary is not None and len(model_summary) > 0:
+            # Create detailed model summary table spanning full width
+            ax16.axis("off")
+
+            # Create table data
+            table_data = []
+            for _, row in model_summary.iterrows():
+                table_data.append(
+                    [
+                        row["Model"],
+                        row["AIC"],
+                        row["BIC"],
+                        row["Pseudo R²"],
+                        row["N Observations"],
+                    ]
+                )
+
+            table = ax16.table(
+                cellText=table_data,
+                colLabels=["Model", "AIC", "BIC", "Pseudo R²", "N Observations"],
+                cellLoc="center",
+                loc="center",
+                colWidths=[0.2, 0.15, 0.15, 0.15, 0.15],
+            )
+            table.auto_set_font_size(False)
+            table.set_fontsize(8)
+            table.scale(1, 2.0)
+
+            # Style the table
+            for i in range(len(table_data) + 1):
+                for j in range(5):
+                    cell = table[(i, j)]
+                    if i == 0:  # Header
+                        cell.set_facecolor("#4CAF50")
+                        cell.set_text_props(weight="bold", color="white")
+                    else:
+                        cell.set_facecolor("#f0f0f0" if i % 2 == 0 else "white")
+
+            ax16.set_title(
+                f"P. Detailed Model Summary Statistics{title_suffix}",
+                fontsize=12,
+                fontweight="bold",
+                pad=20,
+            )
+        else:
+            ax16.text(
+                0.5,
+                0.5,
+                "No model summary available",
+                ha="center",
+                va="center",
+                transform=ax16.transAxes,
+                fontsize=12,
+            )
+            ax16.set_title(
+                f"P. Model Summary Statistics (N/A){title_suffix}",
+                fontsize=12,
+                fontweight="bold",
+            )
+
+        # Adjust font sizes for comprehensive layout
         plt.rcParams.update(
             {
-                "font.size": 8,  # Reduced from 10
-                "axes.titlesize": 9,  # Reduced from 12
-                "axes.labelsize": 8,  # Reduced from 10
-                "xtick.labelsize": 7,  # Reduced from 9
-                "ytick.labelsize": 7,  # Reduced from 9
-                "legend.fontsize": 7,  # Reduced from 9
+                "font.size": 7,
+                "axes.titlesize": 8,
+                "axes.labelsize": 7,
+                "xtick.labelsize": 6,
+                "ytick.labelsize": 6,
+                "legend.fontsize": 6,
             }
         )
 
-        plt.tight_layout(pad=1.0)  # Reduced padding for tighter layout
+        plt.tight_layout(pad=1.0)
         return fig
 
     def create_custom_layout(

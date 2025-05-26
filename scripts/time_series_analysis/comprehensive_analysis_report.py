@@ -301,44 +301,52 @@ class ComprehensiveAnalysisReport:
     def create_comprehensive_visualization(self):
         """Create a comprehensive one-page visualization."""
         # Import the plot orchestrator
-        try:
-            from envidis.time_series_analysis.plot_orchestrator import PlotOrchestrator
+        from envidis.time_series_analysis.plot_orchestrator import PlotOrchestrator
 
-            # Create orchestrator
-            orchestrator = PlotOrchestrator()
+        # Create orchestrator
+        orchestrator = PlotOrchestrator(output_dir=self.output_dir)
 
-            # Prepare yearly data if needed
-            yearly_data = None
-            if len(self.data) > 0:
-                yearly_data = (
-                    self.data.groupby(self.data.index.year)
-                    .agg(
-                        {
-                            "ObservedEntities": "sum",
-                            "TotalDocuments": "sum",
-                        }
-                    )
-                    .reset_index()
+        # Prepare yearly data if needed
+        yearly_data = None
+        if len(self.data) > 0:
+            yearly_data = (
+                self.data.groupby(self.data.index.year)
+                .agg(
+                    {
+                        "ObservedEntities": "sum",
+                        "TotalDocuments": "sum",
+                    }
                 )
-                yearly_data.columns = ["Year", "ObservedEntities", "TotalDocuments"]
-
-            # Create model summary and coefficients tables
-            model_summary = self.create_model_summary_table()
-            coef_table = self.create_coefficients_table()
-
-            # Create the comprehensive plot using the orchestrator
-            fig = orchestrator.create_comprehensive_plot(
-                data=self.data,
-                yearly_data=yearly_data,
-                model_summary=model_summary,
-                coef_table=coef_table,
+                .reset_index()
             )
+            yearly_data.columns = ["Year", "ObservedEntities", "TotalDocuments"]
 
-            return fig
+        # Create model summary and coefficients tables
+        model_summary = self.create_model_summary_table()
+        coef_table = self.create_coefficients_table()
 
-        except ImportError:
-            # Fallback to original method if orchestrator not available
-            return self._create_original_visualization()
+        # Get best model for residual and autocorrelation analysis
+        best_model = None
+        if "best_trend" in self.models and self.models["best_trend"] is not None:
+            best_model = self.models["best_trend"]
+
+        # Get diagnostic results
+        diagnostics = self.create_diagnostic_summary()
+
+        # Create the comprehensive plot using the orchestrator with all components
+        fig = orchestrator.create_comprehensive_plot(
+            data=self.data,
+            yearly_data=yearly_data,
+            model_summary=model_summary,
+            coef_table=coef_table,
+            best_model=best_model,
+            models=self.models,
+            trend_fitter=self.trend_fitter,
+            diagnostics=diagnostics,
+            use_real_data=self.use_real_data,
+        )
+
+        return fig
 
     def _create_original_visualization(self):
         """Original visualization method as fallback."""
@@ -779,15 +787,21 @@ class ComprehensiveAnalysisReport:
             table_data = []
             for _, row in model_summary.iterrows():
                 table_data.append(
-                    [row["Model"], row["AIC"], row["BIC"], row["Pseudo R²"], row["N"]]
+                    [
+                        row["Model"],
+                        row["AIC"],
+                        row["BIC"],
+                        row["Pseudo R²"],
+                        row["N Observations"],
+                    ]
                 )
 
             table = ax9.table(
                 cellText=table_data,
-                colLabels=["Model", "AIC", "BIC", "Pseudo R²", "N"],
+                colLabels=["Model", "AIC", "BIC", "Pseudo R²", "N Observations"],
                 cellLoc="center",
                 loc="upper left",
-                colWidths=[0.15, 0.1, 0.1, 0.1, 0.08],
+                colWidths=[0.15, 0.1, 0.1, 0.1, 0.12],
             )
             table.auto_set_font_size(False)
             table.set_fontsize(9)

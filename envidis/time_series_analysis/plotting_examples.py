@@ -39,7 +39,7 @@ def load_sample_data():
 
     # Create document counts
     doc_counts = np.random.poisson(
-        np.maximum(1, co_counts * 2 + np.random.normal(50, 10, n_days))
+        np.maximum(1, co_counts * 2 + np.random.normal(50, 10, n_days)),
     )
 
     data = pd.DataFrame(
@@ -47,7 +47,7 @@ def load_sample_data():
             "Date": dates,
             "ObservedEntities": co_counts,
             "TotalDocuments": doc_counts,
-        }
+        },
     )
     data = data.set_index("Date")
 
@@ -68,7 +68,7 @@ def example_individual_plots() -> None:
             {
                 "ObservedEntities": "sum",
                 "TotalDocuments": "sum",
-            }
+            },
         )
         .reset_index()
     )
@@ -115,7 +115,7 @@ def example_orchestrator_usage() -> None:
             {
                 "ObservedEntities": "sum",
                 "TotalDocuments": "sum",
-            }
+            },
         )
         .reset_index()
     )
@@ -137,7 +137,9 @@ def example_orchestrator_usage() -> None:
         "trend_analysis": {"trend_color": "purple", "trend_degree": 3},
     }
     fig = orchestrator.create_comprehensive_plot(
-        data, yearly_data=yearly_data, **custom_kwargs
+        data,
+        yearly_data=yearly_data,
+        **custom_kwargs,
     )
     orchestrator.save_plot(fig, "comprehensive_custom.png")
     plt.close()
@@ -145,7 +147,9 @@ def example_orchestrator_usage() -> None:
 
     # Example 3: Focused analysis - temporal
     fig = orchestrator.create_focused_analysis(
-        data, yearly_data=yearly_data, focus_type="temporal"
+        data,
+        yearly_data=yearly_data,
+        focus_type="temporal",
     )
     orchestrator.save_plot(fig, "focused_temporal.png")
     plt.close()
@@ -181,7 +185,9 @@ def example_orchestrator_usage() -> None:
         },
     ]
     fig = orchestrator.create_custom_layout(
-        plot_configs, layout=(2, 2), figsize=(12, 8)
+        plot_configs,
+        layout=(2, 2),
+        figsize=(12, 8),
     )
     orchestrator.save_plot(fig, "custom_layout.png")
     plt.close()
@@ -250,7 +256,9 @@ def example_quick_functions() -> None:
 
     # Quick comprehensive plot
     path = quick_comprehensive_plot(
-        data, output_dir="./quick_plots", filename="quick_comprehensive.png"
+        data,
+        output_dir="./quick_plots",
+        filename="quick_comprehensive.png",
     )
     print(f"✓ Quick comprehensive plot saved to: {path}")
 
@@ -316,7 +324,9 @@ def example_advanced_customization() -> None:
 
     # Create focused temporal analysis with custom styling
     fig = orchestrator.create_focused_analysis(
-        data, focus_type="temporal", **custom_styling
+        data,
+        focus_type="temporal",
+        **custom_styling,
     )
     orchestrator.save_plot(fig, "advanced_custom_styling.png")
     plt.close()
