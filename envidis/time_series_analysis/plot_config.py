@@ -122,7 +122,7 @@ PLOT_CONFIGS = {
         "s": 2,  # marker size for scatter
         "alpha": 0.6,
         "color_key": "primary",
-        "remove_outliers": True,  # Remove 99th percentile outliers
+        "remove_outliers": True,  # Only this plot removes outliers
         "outlier_percentile": 99.7,  # Configurable outlier threshold
         "filter_sparse_years": True,  # Remove isolated early years
         "min_year_density": 0.01,  # Minimum data density threshold
@@ -143,7 +143,7 @@ PLOT_CONFIGS = {
         "alpha": 0.7,
         "color_key": "tertiary",
         "log_scale": True,
-        "remove_outliers": True,  # Remove 99th percentile outliers
+        "remove_outliers": False,  # Keep all data for distribution analysis
         "outlier_percentile": 99.7,  # Configurable threshold
     },
     "monthly_patterns": {
@@ -157,7 +157,7 @@ PLOT_CONFIGS = {
         "s": 1,
         "sample_size": 1000,
         "color_key": "accent",
-        "remove_outliers": True,  # Remove 99th percentile outliers
+        "remove_outliers": False,  # Keep all data for scatter analysis
         "outlier_percentile": 99.7,  # Configurable threshold
     },
     "trend_analysis": {
@@ -169,7 +169,7 @@ PLOT_CONFIGS = {
         "trend_alpha": 0.8,
         "fit_trend": True,
         "trend_degree": 2,
-        "remove_outliers": True,  # Remove 99th percentile outliers
+        "remove_outliers": False,  # Keep all data for trend analysis
         "outlier_percentile": 99.7,  # Configurable threshold
         "y_limit_percentile": 95,  # Use 95th percentile for y-axis upper limit
     },
@@ -181,7 +181,7 @@ PLOT_CONFIGS = {
         "alpha": 0.7,
         "color_key": "recent",
         "start_year": 2020,
-        "remove_outliers": True,  # Remove 99th percentile outliers
+        "remove_outliers": False,  # Keep all data for recent trend analysis
         "outlier_percentile": 99.7,  # Configurable threshold
         "y_limit_percentile": 95,  # Use 95th percentile for y-axis upper limit
     },
@@ -193,7 +193,7 @@ PLOT_CONFIGS = {
         "original_color_key": "observed",
         "trend_color_key": "trend",
         "window": None,  # Auto-calculate
-        "remove_outliers": True,  # Remove 99th percentile outliers
+        "remove_outliers": False,  # Keep all data for decomposition analysis
         "outlier_percentile": 99.7,  # Configurable threshold
         "y_limit_percentile": 95,  # Use 95th percentile for y-axis upper limit
     },
@@ -201,7 +201,7 @@ PLOT_CONFIGS = {
         "doc_color": "steelblue",
         "rate_color": "orange",
         "alpha": 0.7,
-        "remove_outliers": True,  # Remove 99th percentile outliers
+        "remove_outliers": False,  # Keep all data for publication volume context
         "outlier_percentile": 99.7,  # Configurable threshold
     },
 }
@@ -304,6 +304,9 @@ class PlotConfig:
     def _apply_colors_to_configs(self):
         """Apply color scheme to plot configurations."""
         for plot_name, config in self.plot_configs.items():
+            # Create a copy of config items to avoid RuntimeError during iteration
+            config_items = list(config.items())
+
             # Handle single color key
             if "color_key" in config:
                 color_key = config["color_key"]
@@ -320,7 +323,7 @@ class PlotConfig:
                     config["colors"] = colors
 
             # Handle specific color mappings
-            for key, value in config.items():
+            for key, value in config_items:  # Use the copy instead of config.items()
                 if key.endswith("_color_key") and value in self.colors:
                     new_key = key.replace("_key", "")
                     config[new_key] = self.colors[value]
@@ -370,7 +373,7 @@ PUBLICATION_CONFIG = PlotConfig(
         "fonts": {"title_size": 10, "label_size": 9, "tick_size": 8},
         "lines": {"linewidth": 1.2, "markersize": 3},  # Slightly thinner for A4
         "outlier_filtering": {
-            "percentile_threshold": 99.5
+            "percentile_threshold": 99.5,
         },  # Even less harsh for publication
     },
 )
@@ -382,7 +385,7 @@ PRESENTATION_CONFIG = PlotConfig(
         "fonts": {"title_size": 11, "label_size": 10, "tick_size": 9},
         "lines": {"linewidth": 1.5, "markersize": 4},
         "outlier_filtering": {
-            "percentile_threshold": 99.8
+            "percentile_threshold": 99.8,
         },  # Very lenient for presentation
     },
 )
@@ -393,7 +396,7 @@ QUICK_CONFIG = PlotConfig(
         "figure": {"figsize": (8.0, 5), "dpi": 100},  # A4 compatible
         "sampling": {"timeseries_sample_rate": 200, "scatter_sample_size": 500},
         "outlier_filtering": {
-            "percentile_threshold": 99.0
+            "percentile_threshold": 99.0,
         },  # More aggressive for quick analysis
     },
 )

@@ -13,12 +13,9 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy import stats
-
-warnings.filterwarnings("ignore")
-
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+from scipy import stats
 from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.stats.stattools import durbin_watson
 from statsmodels.tsa.stattools import acf
@@ -514,7 +511,7 @@ class RealDataAnalysisReport:
             # Use configurable threshold (default 99.7th percentile)
             percentile_threshold = 99.7  # This could be made configurable too
             percentile_value = yearly_data["ObservedEntities"].quantile(
-                percentile_threshold / 100
+                percentile_threshold / 100,
             )
             outlier_years = yearly_data[
                 yearly_data["ObservedEntities"] > percentile_value
@@ -528,9 +525,9 @@ class RealDataAnalysisReport:
                     # Calculate how many times above the median
                     median_val = yearly_data["ObservedEntities"].median()
                     multiplier = value / median_val if median_val > 0 else "N/A"
-                    if isinstance(multiplier, (int, float)):
+                    if isinstance(multiplier, int | float):
                         summary.append(
-                            f"  - {year}: {value:,} co-occurrences ({multiplier:.1f}x median)"
+                            f"  - {year}: {value:,} co-occurrences ({multiplier:.1f}x median)",
                         )
                     else:
                         summary.append(f"  - {year}: {value:,} co-occurrences")
@@ -540,20 +537,20 @@ class RealDataAnalysisReport:
                     yearly_data["ObservedEntities"] <= percentile_value
                 ]
                 summary.append(
-                    f"  - Normal range ({percentile_threshold:.1f}% of years): 0 to {int(percentile_value):,} co-occurrences"
+                    f"  - Normal range ({percentile_threshold:.1f}% of years): 0 to {int(percentile_value):,} co-occurrences",
                 )
                 summary.append(
-                    "  - These outliers were excluded from most trend visualizations"
+                    "  - These outliers were excluded from most trend visualizations",
                 )
             else:
                 summary.append(
-                    f"• ✓ No extreme outlier years detected (>{percentile_threshold:.1f}th percentile)"
+                    f"• ✓ No extreme outlier years detected (>{percentile_threshold:.1f}th percentile)",
                 )
 
         # Raw data outlier analysis with configurable threshold
         percentile_threshold_raw = 99.7  # This could be made configurable too
         percentile_value_raw = self.data["ObservedEntities"].quantile(
-            percentile_threshold_raw / 100
+            percentile_threshold_raw / 100,
         )
         outlier_days = self.data[self.data["ObservedEntities"] > percentile_value_raw]
 
@@ -565,18 +562,18 @@ class RealDataAnalysisReport:
             max_daily = outlier_days["ObservedEntities"].max()
 
             summary.append(
-                f"  - {outlier_count:,} outlier days ({outlier_percentage:.2f}% of all observations)"
+                f"  - {outlier_count:,} outlier days ({outlier_percentage:.2f}% of all observations)",
             )
             summary.append(f"  - Maximum daily value: {max_daily:,} co-occurrences")
             summary.append(
-                f"  - Outliers span {len(outlier_years_raw)} years: {outlier_years_raw[0]}-{outlier_years_raw[-1]}"
+                f"  - Outliers span {len(outlier_years_raw)} years: {outlier_years_raw[0]}-{outlier_years_raw[-1]}",
             )
             summary.append(
-                f"  - Threshold ({percentile_threshold_raw:.1f}th percentile): {int(percentile_value_raw):,} co-occurrences"
+                f"  - Threshold ({percentile_threshold_raw:.1f}th percentile): {int(percentile_value_raw):,} co-occurrences",
             )
         else:
             summary.append(
-                f"• ✓ No extreme daily outliers detected (>{percentile_threshold_raw:.1f}th percentile)"
+                f"• ✓ No extreme daily outliers detected (>{percentile_threshold_raw:.1f}th percentile)",
             )
 
         # Check for data quality issues

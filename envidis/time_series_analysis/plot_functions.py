@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Individual Plotting Functions for Time Series Analysis
+"""Individual Plotting Functions for Time Series Analysis.
+
 This module contains individual plotting functions that can be used independently
 or combined in comprehensive visualizations.
 """
@@ -103,7 +104,7 @@ def plot_raw_timeseries(
     if default_kwargs.get("remove_outliers", True):
         percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
         percentile_value = filtered_data["ObservedEntities"].quantile(
-            percentile_threshold / 100
+            percentile_threshold / 100,
         )
         outlier_data = filtered_data[
             filtered_data["ObservedEntities"] > percentile_value
@@ -404,7 +405,7 @@ def plot_distribution(
         "title": "Distribution of Co-occurrence Counts",
         "xlabel": "Count",
         "ylabel": "Frequency",
-        "remove_outliers": True,  # New parameter to control outlier removal
+        "remove_outliers": False,  # New parameter to control outlier removal
         "outlier_percentile": 99.7,  # New configurable parameter
     }
     default_kwargs.update(kwargs)
@@ -714,7 +715,7 @@ def plot_trend_analysis(
     if default_kwargs.get("remove_outliers", True) and len(yearly_data) > 0:
         percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
         percentile_value = yearly_data["ObservedEntities"].quantile(
-            percentile_threshold / 100
+            percentile_threshold / 100,
         )
         outlier_data = yearly_data[yearly_data["ObservedEntities"] > percentile_value]
         filtered_data = yearly_data[yearly_data["ObservedEntities"] <= percentile_value]
@@ -1127,7 +1128,7 @@ def plot_time_series_decomposition(
     if default_kwargs.get("remove_outliers", True) and len(yearly_data) > 0:
         percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
         percentile_value = yearly_data["ObservedEntities"].quantile(
-            percentile_threshold / 100
+            percentile_threshold / 100,
         )
         outlier_data = yearly_data[yearly_data["ObservedEntities"] > percentile_value]
         filtered_data = yearly_data[yearly_data["ObservedEntities"] <= percentile_value]
@@ -1246,20 +1247,20 @@ def plot_publication_volume_context(
         "doc_color": "steelblue",
         "rate_color": "orange",
         "alpha": 0.7,
-        "remove_outliers": True,
+        "remove_outliers": False,  # Changed from True to False
         "outlier_percentile": 99.7,  # New configurable parameter
     }
     default_kwargs.update(kwargs)
 
     if "TotalDocuments" in yearly_data.columns:
         # Filter out extreme outliers using configurable percentile
-        if default_kwargs.get("remove_outliers", True):
+        if default_kwargs.get("remove_outliers", False):  # Changed default to False
             percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
             doc_percentile = yearly_data["TotalDocuments"].quantile(
-                percentile_threshold / 100
+                percentile_threshold / 100,
             )
             cooc_percentile = yearly_data["ObservedEntities"].quantile(
-                percentile_threshold / 100
+                percentile_threshold / 100,
             )
 
             doc_outliers = yearly_data[yearly_data["TotalDocuments"] > doc_percentile]
@@ -1279,27 +1280,28 @@ def plot_publication_volume_context(
                 if len(doc_outliers) > 0:
                     doc_outlier_years = sorted(doc_outliers["Year"].tolist())
                     max_doc_year = doc_outliers.loc[
-                        doc_outliers["TotalDocuments"].idxmax(), "Year"
+                        doc_outliers["TotalDocuments"].idxmax(),
+                        "Year",
                     ]
                     max_docs = doc_outliers["TotalDocuments"].max()
                     if len(doc_outlier_years) <= 2:
                         outlier_details.append(
-                            f"high-doc years {', '.join(map(str, doc_outlier_years))}"
+                            f"high-doc years {', '.join(map(str, doc_outlier_years))}",
                         )
                     else:
                         outlier_details.append(
-                            f"high-doc years (peak: {max_doc_year}={max_docs:,})"
+                            f"high-doc years (peak: {max_doc_year}={max_docs:,})",
                         )
 
                 if len(cooc_outliers) > 0:
                     cooc_outlier_years = sorted(cooc_outliers["Year"].tolist())
                     if len(cooc_outlier_years) <= 2:
                         outlier_details.append(
-                            f"high-cooc years {', '.join(map(str, cooc_outlier_years))}"
+                            f"high-cooc years {', '.join(map(str, cooc_outlier_years))}",
                         )
                     else:
                         outlier_details.append(
-                            f"{len(cooc_outlier_years)} high-cooc years"
+                            f"{len(cooc_outlier_years)} high-cooc years",
                         )
 
                 default_kwargs[
