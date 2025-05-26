@@ -34,8 +34,8 @@ class ComprehensiveAnalysisReport:
         self,
         data: pd.DataFrame | None = None,
         data_path: str | None = None,
-        output_dir=None,
-        use_real_data=False,
+        output_dir: str | None = None,
+        use_real_data: bool = False,
     ):
         """Initialize the comprehensive analysis report.
 
@@ -83,7 +83,7 @@ class ComprehensiveAnalysisReport:
         self.models = {}
         self.results_summary = {}
 
-    def load_and_prepare_real_data(self):
+    def load_and_prepare_real_data(self) -> pd.DataFrame:
         """Load and prepare real time series data."""
         print(f"Loading real data from: {self.data_path}")
 
@@ -124,7 +124,7 @@ class ComprehensiveAnalysisReport:
 
         return df
 
-    def run_all_analyses(self) -> None:
+    def run_all_analyses(self) -> None:  # noqa: C901
         """Run all statistical analyses."""
         print("Running comprehensive statistical analysis...")
 
@@ -191,10 +191,10 @@ class ComprehensiveAnalysisReport:
             if self.trend_fitter.spline_results:
                 self.models["spline"] = self.trend_fitter.spline_results
 
-    def _prepare_modeling_data(self):
+    def _prepare_modeling_data(self) -> pd.DataFrame:
         """Prepare modeling data for real data analysis."""
         # For very large datasets, sample to ensure computational feasibility
-        if len(self.data) > 10000:
+        if len(self.data) > 20000:
             print(
                 f"   Large dataset detected ({len(self.data)} points). Sampling for modeling...",
             )
@@ -208,7 +208,7 @@ class ComprehensiveAnalysisReport:
 
         return modeling_data
 
-    def create_model_summary_table(self):
+    def create_model_summary_table(self) -> pd.DataFrame:
         """Create comprehensive model summary table."""
         model_summaries = []
 
