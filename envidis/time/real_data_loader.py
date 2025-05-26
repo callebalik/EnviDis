@@ -263,7 +263,7 @@ def print_data_summary(data) -> None:
     if summary["date_range"]["span_years"]:
         print(f"Time span: {summary['date_range']['span_years']:.1f} years")
 
-    print("\nObserved Entities (Co-occurrences):")
+    print("\nIdentified DIS-PNM co-occurrences:")
     print(f"  Total: {summary['observed_entities']['total']:,}")
     print(f"  Mean per observation: {summary['observed_entities']['mean']:.2f}")
     print(f"  Median: {summary['observed_entities']['median']:.0f}")

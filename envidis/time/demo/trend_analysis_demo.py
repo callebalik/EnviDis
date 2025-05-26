@@ -270,7 +270,7 @@ class TrendDetector:
             label="Fitted Trend",
         )
         ax1.set_xlabel("Year")
-        ax1.set_ylabel("Observed Entities", color="blue")
+        ax1.set_ylabel("Identified DIS-PNM co-occurrences", color="blue")
         ax1.tick_params(axis="y", labelcolor="blue")
         ax1.grid(True, alpha=0.3)
 

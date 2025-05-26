@@ -82,8 +82,8 @@ class TimeSeriesAnalysisPipeline:
 
         # Daily time series (sampled)
         ax1.plot(sample_data.index, sample_data[OBSERVED_ENTITIES_COL], "b-", alpha=0.7)
-        ax1.set_title("Daily Observed Entities (Every 30 Days)")
-        ax1.set_ylabel("Observed Entities")
+        ax1.set_title("Daily Identified DIS-PNM co-occurrences (Every 30 Days)")
+        ax1.set_ylabel("Identified DIS-PNM co-occurrences")
         ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
         ax1.xaxis.set_major_locator(mdates.YearLocator())
 

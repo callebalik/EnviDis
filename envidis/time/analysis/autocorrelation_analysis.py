@@ -49,7 +49,6 @@ class AutocorrelationAnalyzer:
 
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        plt.show()
 
     def durbin_watson_test(self):
         """Perform Durbin-Watson test for first-order autocorrelation.
@@ -184,7 +183,7 @@ class AutocorrelationAnalyzer:
 
         plt.title("Fitted Model vs Actual Data Over Time")
         plt.xlabel("Year")
-        plt.ylabel("Observed Entities")
+        plt.ylabel("Identified DIS-PNM co-occurrences")
         plt.legend()
         plt.grid(True, alpha=0.3)
 
@@ -204,7 +203,6 @@ class AutocorrelationAnalyzer:
 
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        plt.show()
 
     def plot_residuals_vs_fitted(self, save_path=None) -> None:
         """Plot residuals vs fitted values to check for patterns.
@@ -246,7 +244,6 @@ class AutocorrelationAnalyzer:
 
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        plt.show()
 
     def create_diagnostic_plots(self, data, output_dir=None) -> None:
         """Create a comprehensive set of diagnostic plots.
@@ -426,7 +423,7 @@ class LaggedModelFitter:
 
         plt.title("Lagged Model: Fitted vs Actual Data Over Time")
         plt.xlabel("Year")
-        plt.ylabel("Observed Entities")
+        plt.ylabel("Identified DIS-PNM co-occurrences")
         plt.legend()
         plt.grid(True, alpha=0.3)
 
@@ -445,7 +442,6 @@ class LaggedModelFitter:
 
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        plt.show()
 
     def compare_models_plot(self, save_path=None) -> None:
         """Compare base model vs lagged model visually.
@@ -511,7 +507,7 @@ class LaggedModelFitter:
 
         plt.title("Model Comparison: Base vs Lagged Model")
         plt.xlabel("Year")
-        plt.ylabel("Observed Entities")
+        plt.ylabel("Identified DIS-PNM co-occurrences")
         plt.legend()
         plt.grid(True, alpha=0.3)
 
@@ -519,3 +515,16 @@ class LaggedModelFitter:
         base_aic = self.base_model_results.aic
         lagged_aic = self.lagged_results.aic
         improvement = base_aic - lagged_aic
+        plt.text(
+            0.02,
+            0.92,
+            f"Base Model AIC: {base_aic:.2f}\nLagged Model AIC: {lagged_aic:.2f}\nImprovement: {improvement:.2f}",
+            transform=plt.gca().transAxes,
+            verticalalignment="top",
+            bbox=dict(boxstyle="round", facecolor="lightyellow", alpha=0.8),
+        )
+
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches="tight")

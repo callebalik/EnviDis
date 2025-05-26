@@ -215,7 +215,7 @@ class TrendModelFitter:
             # Use normalized values for plotting
             plot_observed = normalized_observed
             plot_fitted = normalized_fitted
-            y_label = "Entities per 1000 Documents"
+            y_label = "Identified DIS-PNM co-occurrences per 1000 Documents"
             plot_title_suffix = "(Visualization Normalized)"
         else:
             # Use absolute values for plotting
