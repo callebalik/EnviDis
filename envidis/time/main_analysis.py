@@ -22,7 +22,7 @@ from envidis.time.plots.data_visualization import create_all_plots
 class TimeSeriesAnalysisPipeline:
     """Complete time series analysis pipeline."""
 
-    def __init__(self, data_path=None, output_dir=None):
+    def __init__(self, data_path: str | None = None, output_dir: str | None = None):
         """Initialize the analysis pipeline.
 
         Parameters
