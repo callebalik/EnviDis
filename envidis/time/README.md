@@ -276,8 +276,8 @@ pipeline = TimeSeriesAnalysisPipeline(
 
 Your data should have columns:
 - `Year` (as index)
-- `ObservedEntities`
-- `TotalDocuments`
+- `co_count`
+- `document_count`
 
 ### Modifying Parameters
 Each script has configurable parameters:

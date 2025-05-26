@@ -55,7 +55,7 @@ def generate_sample_data(
     Returns
     -------
     pd.DataFrame
-        DataFrame with Year as index and ObservedEntities, TotalDocuments as columns
+        DataFrame with Year as index and co_count, document_count as columns
 
     """
     if generation_type is None:
@@ -97,8 +97,8 @@ def generate_sample_data(
     data = pd.DataFrame(
         {
             "Year": years,
-            "ObservedEntities": observed_entities,
-            "TotalDocuments": total_documents,
+            "co_count": observed_entities,
+            "document_count": total_documents,
         },
     )
 
@@ -148,8 +148,8 @@ def generate_daily_sample_data(start_date="1990-01-01", end_date="2024-12-31", s
     # Create DataFrame with Date index
     df = pd.DataFrame(
         {
-            "ObservedEntities": observed_entities,
-            "TotalDocuments": total_documents,
+            "co_count": observed_entities,
+            "document_count": total_documents,
             "Year": date_range.year,
             "Month": date_range.month,
             "Day": date_range.day,

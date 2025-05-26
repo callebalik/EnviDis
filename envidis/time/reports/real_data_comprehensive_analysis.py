@@ -51,13 +51,11 @@ class RealDataAnalysisReport:
         df = pd.read_csv(self.data_path)
 
         # Convert date column to datetime
-        df["Date"] = pd.to_datetime(df["pubdate_resolved"])
+        df["Date"] = pd.to_datetime(df["date"])
 
         # Rename for consistency with existing framework
-        df["ObservedEntities"] = df[
-            "co_count"
-        ]  # Use co-occurrence count as dependent variable
-        df["TotalDocuments"] = df["document_count"]
+        df["co_count"] = df["co_count"]  # Use co-occurrence count as dependent variable
+        df["document_count"] = df["document_count"]
 
         # Create time variables for modeling
         df["Year"] = df["Date"].dt.year
@@ -81,7 +79,7 @@ class RealDataAnalysisReport:
         print(f"Prepared data shape: {df.shape}")
         print(f"Date range: {df.index.min()} to {df.index.max()}")
         print(
-            f"ObservedEntities (co_count) range: {df['ObservedEntities'].min()} to {df['ObservedEntities'].max()}",
+            f"co_count (co_count) range: {df['co_count'].min()} to {df['co_count'].max()}",
         )
 
         return df
@@ -103,27 +101,26 @@ class RealDataAnalysisReport:
         """Fit basic count models (Poisson and Negative Binomial)."""
         # Filter out extremely high values that might cause convergence issues
         modeling_data = self.data[
-            self.data["ObservedEntities"]
-            <= self.data["ObservedEntities"].quantile(0.95)
+            self.data["co_count"] <= self.data["co_count"].quantile(0.95)
         ]
 
         # Filter out zero document counts to avoid log(0) issues
-        modeling_data = modeling_data[modeling_data["TotalDocuments"] > 0]
+        modeling_data = modeling_data[modeling_data["document_count"] > 0]
 
         try:
             # Poisson model with day-level time trend and document count as offset
-            formula = "ObservedEntities ~ DaysSinceStart_scaled"
+            formula = "co_count ~ DaysSinceStart_scaled"
             self.models["poisson"] = smf.poisson(
                 formula,
                 data=modeling_data,
-                offset=np.log(modeling_data["TotalDocuments"]),
+                offset=np.log(modeling_data["document_count"]),
             ).fit(disp=0)
 
             # Negative Binomial model with offset
             self.models["negative_binomial"] = smf.negativebinomial(
                 formula,
                 data=modeling_data,
-                offset=np.log(modeling_data["TotalDocuments"]),
+                offset=np.log(modeling_data["document_count"]),
             ).fit(disp=0)
 
             print(
@@ -138,38 +135,37 @@ class RealDataAnalysisReport:
         sample_size = min(5000, len(self.data))
         modeling_data = self.data.sample(n=sample_size, random_state=42)
         modeling_data = modeling_data[
-            modeling_data["ObservedEntities"]
-            <= modeling_data["ObservedEntities"].quantile(0.95)
+            modeling_data["co_count"] <= modeling_data["co_count"].quantile(0.95)
         ]
 
         # Filter out zero document counts to avoid log(0) issues
-        modeling_data = modeling_data[modeling_data["TotalDocuments"] > 0]
+        modeling_data = modeling_data[modeling_data["document_count"] > 0]
 
         try:
             # Linear trend (year-based for interpretability) with offset
-            formula_linear = "ObservedEntities ~ Year_scaled"
+            formula_linear = "co_count ~ Year_scaled"
             self.models["linear"] = smf.poisson(
                 formula_linear,
                 data=modeling_data,
-                offset=np.log(modeling_data["TotalDocuments"]),
+                offset=np.log(modeling_data["document_count"]),
             ).fit(disp=0)
 
             # Quadratic trend with offset
-            formula_quad = "ObservedEntities ~ Year_scaled + I(Year_scaled**2)"
+            formula_quad = "co_count ~ Year_scaled + I(Year_scaled**2)"
             self.models["quadratic"] = smf.poisson(
                 formula_quad,
                 data=modeling_data,
-                offset=np.log(modeling_data["TotalDocuments"]),
+                offset=np.log(modeling_data["document_count"]),
             ).fit(disp=0)
 
             # Cubic trend with offset
             formula_cubic = (
-                "ObservedEntities ~ Year_scaled + I(Year_scaled**2) + I(Year_scaled**3)"
+                "co_count ~ Year_scaled + I(Year_scaled**2) + I(Year_scaled**3)"
             )
             self.models["cubic"] = smf.poisson(
                 formula_cubic,
                 data=modeling_data,
-                offset=np.log(modeling_data["TotalDocuments"]),
+                offset=np.log(modeling_data["document_count"]),
             ).fit(disp=0)
 
             print(
@@ -183,13 +179,13 @@ class RealDataAnalysisReport:
         # Monthly aggregation for pattern analysis
         monthly_data = self.data.groupby(
             [self.data.index.year, self.data.index.month],
-        ).agg({"ObservedEntities": "sum", "TotalDocuments": "sum"})
+        ).agg({"co_count": "sum", "document_count": "sum"})
         monthly_data.index.names = ["Year", "Month"]
         monthly_data = monthly_data.reset_index()
 
         # Yearly aggregation
         yearly_data = self.data.groupby(self.data.index.year).agg(
-            {"ObservedEntities": "sum", "TotalDocuments": "sum"},
+            {"co_count": "sum", "document_count": "sum"},
         )
         yearly_data.index.name = "Year"
         yearly_data = yearly_data.reset_index(drop=False)
@@ -284,7 +280,7 @@ class RealDataAnalysisReport:
         sample_data = self.data.iloc[::100]  # Sample every 100th point for visibility
         ax1.plot(
             sample_data.index,
-            sample_data["ObservedEntities"],
+            sample_data["co_count"],
             "b-",
             alpha=0.7,
             linewidth=0.5,
@@ -302,7 +298,7 @@ class RealDataAnalysisReport:
         if hasattr(self, "yearly_data"):
             ax2.plot(
                 self.yearly_data["Year"],
-                self.yearly_data["ObservedEntities"],
+                self.yearly_data["co_count"],
                 "ro-",
                 markersize=3,
             )
@@ -316,7 +312,7 @@ class RealDataAnalysisReport:
         # 3. Distribution of counts
         ax3 = plt.subplot(4, 3, 3)
         # Log scale for better visualization
-        non_zero_data = self.data[self.data["ObservedEntities"] > 0]["ObservedEntities"]
+        non_zero_data = self.data[self.data["co_count"] > 0]["co_count"]
         ax3.hist(np.log10(non_zero_data + 1), bins=50, alpha=0.7, color="green")
         ax3.set_title(
             "C. Distribution of Co-occurrence Counts (Log Scale)",
@@ -331,7 +327,7 @@ class RealDataAnalysisReport:
         recent_data = self.data[self.data.index.year >= 2020]
         if len(recent_data) > 0:
             monthly_means = recent_data.groupby(recent_data.index.month)[
-                "ObservedEntities"
+                "co_count"
             ].mean()
             ax4.bar(
                 monthly_means.index,
@@ -351,8 +347,8 @@ class RealDataAnalysisReport:
         ax5 = plt.subplot(4, 3, 5)
         sample_scatter = self.data.sample(n=min(1000, len(self.data)), random_state=42)
         ax5.scatter(
-            sample_scatter["TotalDocuments"],
-            sample_scatter["ObservedEntities"],
+            sample_scatter["document_count"],
+            sample_scatter["co_count"],
             alpha=0.6,
             s=1,
             color="orange",
@@ -388,7 +384,7 @@ class RealDataAnalysisReport:
         ax7 = plt.subplot(4, 3, 7)
         if hasattr(self, "yearly_data") and len(self.yearly_data) > 10:
             years = self.yearly_data["Year"]
-            counts = self.yearly_data["ObservedEntities"]
+            counts = self.yearly_data["co_count"]
 
             ax7.plot(years, counts, "bo-", markersize=3, label="Observed")
 
@@ -404,8 +400,8 @@ class RealDataAnalysisReport:
 
         # 8. Zero vs Non-zero analysis
         ax8 = plt.subplot(4, 3, 8)
-        zero_counts = (self.data["ObservedEntities"] == 0).sum()
-        non_zero_counts = (self.data["ObservedEntities"] > 0).sum()
+        zero_counts = (self.data["co_count"] == 0).sum()
+        non_zero_counts = (self.data["co_count"] > 0).sum()
         ax8.pie(
             [zero_counts, non_zero_counts],
             labels=["Zero Co-occurrences", "Non-zero Co-occurrences"],
@@ -420,7 +416,7 @@ class RealDataAnalysisReport:
         recent_data_subset = self.data[recent_data_filter]
         if len(recent_data_subset) > 0:
             recent_yearly = recent_data_subset.groupby(recent_data_subset.index.year)[
-                "ObservedEntities"
+                "co_count"
             ].sum()
             ax9.bar(recent_yearly.index, recent_yearly.values, color="teal", alpha=0.7)
             ax9.set_title("I. Recent Trend (2020-2025)", fontsize=12, fontweight="bold")
@@ -474,10 +470,10 @@ class RealDataAnalysisReport:
             ],
             [
                 "Zero Values",
-                f"{(self.data['ObservedEntities'] == 0).sum():,} ({(self.data['ObservedEntities'] == 0).mean()*100:.1f}%)",
+                f"{(self.data['co_count'] == 0).sum():,} ({(self.data['co_count'] == 0).mean()*100:.1f}%)",
             ],
-            ["Max Co-occurrence", f"{self.data['ObservedEntities'].max():,}"],
-            ["Mean Co-occurrence", f"{self.data['ObservedEntities'].mean():.2f}"],
+            ["Max Co-occurrence", f"{self.data['co_count'].max():,}"],
+            ["Mean Co-occurrence", f"{self.data['co_count'].mean():.2f}"],
             ["Years Covered", f"{self.data.index.year.nunique()}"],
         ]
 
@@ -498,14 +494,12 @@ class RealDataAnalysisReport:
             # Simple moving average for trend visualization
             window = min(5, len(self.yearly_data) // 4)
             rolling_mean = (
-                pd.Series(self.yearly_data["ObservedEntities"])
-                .rolling(window=window)
-                .mean()
+                pd.Series(self.yearly_data["co_count"]).rolling(window=window).mean()
             )
 
             ax12.plot(
                 self.yearly_data["Year"],
-                self.yearly_data["ObservedEntities"],
+                self.yearly_data["co_count"],
                 "b-",
                 alpha=0.3,
                 label="Original",
@@ -550,11 +544,11 @@ class RealDataAnalysisReport:
         )
         summary.append(f"• Years covered: {self.data.index.year.nunique()}")
         summary.append("• Co-occurrence statistics:")
-        summary.append(f"  - Mean: {self.data['ObservedEntities'].mean():.2f}")
-        summary.append(f"  - Median: {self.data['ObservedEntities'].median():.2f}")
-        summary.append(f"  - Max: {self.data['ObservedEntities'].max():,}")
+        summary.append(f"  - Mean: {self.data['co_count'].mean():.2f}")
+        summary.append(f"  - Median: {self.data['co_count'].median():.2f}")
+        summary.append(f"  - Max: {self.data['co_count'].max():,}")
         summary.append(
-            f"  - Zero values: {(self.data['ObservedEntities'] == 0).sum():,} ({(self.data['ObservedEntities'] == 0).mean()*100:.1f}%)",
+            f"  - Zero values: {(self.data['co_count'] == 0).sum():,} ({(self.data['co_count'] == 0).mean()*100:.1f}%)",
         )
         summary.append("")
 
@@ -625,7 +619,7 @@ class RealDataAnalysisReport:
         recent_data = self.data[self.data.index.year >= 2020]
         summary.append(f"• Recent data (2020+): {len(recent_data):,} observations")
         summary.append(
-            f"• Zero-inflation level: {(self.data['ObservedEntities'] == 0).mean()*100:.1f}%",
+            f"• Zero-inflation level: {(self.data['co_count'] == 0).mean()*100:.1f}%",
         )
 
         return "\n".join(summary)
@@ -657,9 +651,9 @@ class RealDataAnalysisReport:
             "date_range_start": str(self.data.index.min().date()),
             "date_range_end": str(self.data.index.max().date()),
             "years_covered": self.data.index.year.nunique(),
-            "mean_co_occurrence": self.data["ObservedEntities"].mean(),
-            "max_co_occurrence": self.data["ObservedEntities"].max(),
-            "zero_percentage": (self.data["ObservedEntities"] == 0).mean() * 100,
+            "mean_co_occurrence": self.data["co_count"].mean(),
+            "max_co_occurrence": self.data["co_count"].max(),
+            "zero_percentage": (self.data["co_count"] == 0).mean() * 100,
         }
 
         pd.DataFrame([data_summary]).to_csv(

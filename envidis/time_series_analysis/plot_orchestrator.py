@@ -44,7 +44,11 @@ class PlotOrchestrator:
         os.makedirs(self.output_dir, exist_ok=True)
 
     def plot_autocorrelation(
-        self, best_model, ax, title="Autocorrelation Function of Residuals", **kwargs
+        self,
+        best_model,
+        ax,
+        title="Autocorrelation Function of Residuals",
+        **kwargs,
     ) -> None:
         """Plot autocorrelation function of residuals."""
         if best_model is not None and hasattr(best_model, "resid_pearson"):
@@ -81,7 +85,11 @@ class PlotOrchestrator:
             ax.set_title(f"{title} (N/A)", fontsize=9, fontweight="bold")
 
     def plot_qq_plot(
-        self, best_model, ax, title="Q-Q Plot (Normality Check)", **kwargs
+        self,
+        best_model,
+        ax,
+        title="Q-Q Plot (Normality Check)",
+        **kwargs,
     ) -> None:
         """Plot Q-Q plot for residuals."""
         if best_model is not None and hasattr(best_model, "resid_pearson"):
@@ -113,7 +121,11 @@ class PlotOrchestrator:
             ax.set_title(f"{title} (N/A)", fontsize=9, fontweight="bold")
 
     def plot_residuals_vs_fitted(
-        self, best_model, ax, title="Residuals vs Fitted Values", **kwargs
+        self,
+        best_model,
+        ax,
+        title="Residuals vs Fitted Values",
+        **kwargs,
     ) -> None:
         """Plot residuals vs fitted values."""
         if (
@@ -246,7 +258,7 @@ class PlotOrchestrator:
             )
 
         # Plot C: Publication volume context (FULL ROW 3)
-        if yearly_data is not None and "TotalDocuments" in yearly_data.columns:
+        if yearly_data is not None and "document_count" in yearly_data.columns:
             ax3 = fig.add_subplot(gs[2, :])
             from envidis.time_series_analysis.plot_functions import (
                 plot_publication_volume_context,
@@ -390,7 +402,7 @@ class PlotOrchestrator:
                         row["BIC"],
                         row["Pseudo R²"],
                         row["N Observations"],
-                    ]
+                    ],
                 )
 
             table = ax16.table(
@@ -445,7 +457,7 @@ class PlotOrchestrator:
                 "xtick.labelsize": 6,
                 "ytick.labelsize": 6,
                 "legend.fontsize": 6,
-            }
+            },
         )
 
         plt.tight_layout(pad=1.0)
@@ -792,14 +804,14 @@ class PlotOrchestrator:
 
         # Prepare yearly data if not provided
         yearly_data = kwargs.get("yearly_data")
-        if yearly_data is None and "ObservedEntities" in data.columns:
+        if yearly_data is None and "co_count" in data.columns:
             yearly_data = (
                 data.groupby(data.index.year)
                 .agg(
                     {
-                        "ObservedEntities": "sum",
-                        "TotalDocuments": (
-                            "sum" if "TotalDocuments" in data.columns else "count"
+                        "co_count": "sum",
+                        "document_count": (
+                            "sum" if "document_count" in data.columns else "count"
                         ),
                     },
                 )

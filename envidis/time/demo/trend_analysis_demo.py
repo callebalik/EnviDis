@@ -141,7 +141,7 @@ class TrendDetector:
         print("\n--- Overall Trend Significance ---")
 
         # Compare with null model (no time trend)
-        null_formula = "ObservedEntities ~ TotalDocuments"
+        null_formula = "co_count ~ document_count"
         null_model = self.trend_fitter.base_family
         import statsmodels.formula.api as smf
 
@@ -244,7 +244,7 @@ class TrendDetector:
         """Create visualizations of detected trends."""
         # Calculate normalized entities for comparison
         normalized_entities = (
-            self.data["ObservedEntities"] / self.data["TotalDocuments"]
+            self.data["co_count"] / self.data["document_count"]
         ) * 1000
 
         plt.figure(figsize=(18, 12))
@@ -257,7 +257,7 @@ class TrendDetector:
         # Main trend line
         ax1.scatter(
             self.data.index,
-            self.data["ObservedEntities"],
+            self.data["co_count"],
             alpha=0.6,
             color="blue",
             label="Observed Data",
@@ -277,7 +277,7 @@ class TrendDetector:
         # Document histogram overlay
         ax1_hist.bar(
             self.data.index,
-            self.data["TotalDocuments"],
+            self.data["document_count"],
             alpha=0.3,
             color="orange",
             width=0.8,
@@ -299,7 +299,7 @@ class TrendDetector:
         plt.subplot(3, 2, 2)
         # Fit the same model type to normalized data
         normalized_data = self.data.copy()
-        normalized_data["ObservedEntities"] = normalized_entities
+        normalized_data["co_count"] = normalized_entities
 
         # Create a new trend fitter for normalized data
         from envidis.time.analysis.trend_modeling import TrendModelFitter

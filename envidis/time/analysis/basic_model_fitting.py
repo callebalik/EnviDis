@@ -18,7 +18,7 @@ class BasicModelFitter:
         Parameters
         ----------
         data : pd.DataFrame
-            DataFrame with required columns: ObservedEntities, Year_scaled, TotalDocuments
+            DataFrame with required columns: co_count, Year_scaled, document_count
 
         """
         self.data = data
@@ -28,7 +28,7 @@ class BasicModelFitter:
 
     def fit_poisson_model(self) -> Any:
         """Fit Poisson regression model."""
-        formula = "ObservedEntities ~ DaysSinceStart_scaled + TotalDocuments"
+        formula = "co_count ~ DaysSinceStart_scaled + document_count"
         poisson_model = smf.glm(
             formula=formula,
             data=self.data,
@@ -39,7 +39,7 @@ class BasicModelFitter:
 
     def fit_negative_binomial_model(self) -> Any:
         """Fit Negative Binomial regression model."""
-        formula = "ObservedEntities ~ DaysSinceStart_scaled + TotalDocuments"
+        formula = "co_count ~ DaysSinceStart_scaled + document_count"
         nb_model = smf.glm(
             formula=formula,
             data=self.data,

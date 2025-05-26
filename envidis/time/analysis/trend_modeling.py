@@ -44,7 +44,7 @@ class TrendModelFitter:
     def fit_linear_model(self):
         """Fit linear trend model."""
         # Change from Year_scaled to DaysSinceStart_scaled
-        formula = "ObservedEntities ~ DaysSinceStart_scaled + TotalDocuments"
+        formula = "co_count ~ DaysSinceStart_scaled + document_count"
         model = smf.glm(formula=formula, data=self.data, family=self.base_family)
         self.linear_results = model.fit()
         return self.linear_results
@@ -52,7 +52,7 @@ class TrendModelFitter:
     def fit_quadratic_model(self):
         """Fit quadratic trend model."""
         # Change from Year_scaled to DaysSinceStart_scaled
-        formula = "ObservedEntities ~ DaysSinceStart_scaled + I(DaysSinceStart_scaled**2) + TotalDocuments"
+        formula = "co_count ~ DaysSinceStart_scaled + I(DaysSinceStart_scaled**2) + document_count"
         model = smf.glm(formula=formula, data=self.data, family=self.base_family)
         self.poly2_results = model.fit()
         return self.poly2_results
@@ -60,7 +60,7 @@ class TrendModelFitter:
     def fit_cubic_model(self):
         """Fit cubic trend model."""
         # Change from Year_scaled to DaysSinceStart_scaled
-        formula = "ObservedEntities ~ DaysSinceStart_scaled + I(DaysSinceStart_scaled**2) + I(DaysSinceStart_scaled**3) + TotalDocuments"
+        formula = "co_count ~ DaysSinceStart_scaled + I(DaysSinceStart_scaled**2) + I(DaysSinceStart_scaled**3) + document_count"
         model = smf.glm(formula=formula, data=self.data, family=self.base_family)
         self.poly3_results = model.fit()
         return self.poly3_results
@@ -75,9 +75,7 @@ class TrendModelFitter:
 
         """
         # Change from Year_scaled to DaysSinceStart_scaled
-        formula = (
-            f"ObservedEntities ~ cr(DaysSinceStart_scaled, df={df}) + TotalDocuments"
-        )
+        formula = f"co_count ~ cr(DaysSinceStart_scaled, df={df}) + document_count"
         model = smf.glm(formula=formula, data=self.data, family=self.base_family)
         self.spline_results = model.fit()
         return self.spline_results
@@ -206,13 +204,13 @@ class TrendModelFitter:
 
         # Get model predictions (always fitted on absolute counts)
         fitted_values = self.best_model.fittedvalues
-        observed_values = self.data["ObservedEntities"]
+        observed_values = self.data["co_count"]
 
         # Optionally normalize for visualization
         if normalize_visualization:
             # Normalize both observed and fitted values by total documents
-            normalized_observed = (observed_values / self.data["TotalDocuments"]) * 1000
-            normalized_fitted = (fitted_values / self.data["TotalDocuments"]) * 1000
+            normalized_observed = (observed_values / self.data["document_count"]) * 1000
+            normalized_fitted = (fitted_values / self.data["document_count"]) * 1000
 
             # Use normalized values for plotting
             plot_observed = normalized_observed
@@ -260,7 +258,7 @@ class TrendModelFitter:
         # Document histogram overlay
         ax1_hist.bar(
             self.data.index,
-            self.data["TotalDocuments"],
+            self.data["document_count"],
             alpha=0.3,
             color="orange",
             width=0.8,
@@ -285,8 +283,8 @@ class TrendModelFitter:
         # Always show both absolute and normalized trends for comparison
         abs_trend_effect = fitted_values - np.mean(fitted_values)
         norm_trend_effect = (
-            fitted_values / self.data["TotalDocuments"] * 1000
-        ) - np.mean(fitted_values / self.data["TotalDocuments"] * 1000)
+            fitted_values / self.data["document_count"] * 1000
+        ) - np.mean(fitted_values / self.data["document_count"] * 1000)
 
         ax2.plot(
             self.data.index,
@@ -373,9 +371,9 @@ Trend Direction:
         plt.show()
 
         return {
-            "normalized_observed": (observed_values / self.data["TotalDocuments"])
+            "normalized_observed": (observed_values / self.data["document_count"])
             * 1000,
-            "normalized_fitted": (fitted_values / self.data["TotalDocuments"]) * 1000,
+            "normalized_fitted": (fitted_values / self.data["document_count"]) * 1000,
             "model_results": self.best_model,
         }
 

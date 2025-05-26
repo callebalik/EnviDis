@@ -15,7 +15,7 @@ def plot_entities_over_time(data, save_path=None) -> None:
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with Date/Year as index and ObservedEntities column
+        DataFrame with Date/Year as index and co_count column
     save_path : str, optional
         Path to save the plot
 
@@ -26,11 +26,14 @@ def plot_entities_over_time(data, save_path=None) -> None:
     if len(data) > 1000:
         sample_data = data.iloc[::30]  # Sample every 30 points
         sns.lineplot(
-            x=sample_data.index, y="ObservedEntities", data=sample_data, marker="o"
+            x=sample_data.index,
+            y="co_count",
+            data=sample_data,
+            marker="o",
         )
         plt.title("Observed Entities Over Time (Sampled)")
     else:
-        sns.lineplot(x=data.index, y="ObservedEntities", data=data, marker="o")
+        sns.lineplot(x=data.index, y="co_count", data=data, marker="o")
         plt.title("Observed Entities Over Time")
 
     # Handle datetime vs numeric index
@@ -56,7 +59,7 @@ def plot_entities_with_documents_histogram(data, save_path=None) -> None:
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with Date/Year as index, ObservedEntities and TotalDocuments columns
+        DataFrame with Date/Year as index, co_count and document_count columns
     save_path : str, optional
         Path to save the plot
 
@@ -74,7 +77,7 @@ def plot_entities_with_documents_histogram(data, save_path=None) -> None:
     # Main plot: Entities over time
     ax1.plot(
         plot_data.index,
-        plot_data["ObservedEntities"],
+        plot_data["co_count"],
         marker="o",
         linewidth=2,
         markersize=6,
@@ -93,7 +96,7 @@ def plot_entities_with_documents_histogram(data, save_path=None) -> None:
     width = 0.8 if len(plot_data) < 100 else 20  # Adjust bar width for daily data
     ax2.bar(
         plot_data.index,
-        plot_data["TotalDocuments"],
+        plot_data["document_count"],
         alpha=0.7,
         color="orange",
         width=width,
@@ -134,7 +137,7 @@ def plot_entities_normalized_and_absolute(data, save_path=None):
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with Date/Year as index, ObservedEntities and TotalDocuments columns
+        DataFrame with Date/Year as index, co_count and document_count columns
     save_path : str, optional
         Path to save the plot
 
@@ -150,7 +153,7 @@ def plot_entities_normalized_and_absolute(data, save_path=None):
     # Calculate normalized entities (entities per document * 1000 for readability)
     data_with_normalized = plot_data.copy()
     data_with_normalized["NormalizedEntities"] = (
-        plot_data["ObservedEntities"] / plot_data["TotalDocuments"]
+        plot_data["co_count"] / plot_data["document_count"]
     ) * 1000
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
@@ -161,7 +164,7 @@ def plot_entities_normalized_and_absolute(data, save_path=None):
     # Line plot for entities
     ax1.plot(
         plot_data.index,
-        plot_data["ObservedEntities"],
+        plot_data["co_count"],
         marker="o",
         linewidth=2,
         markersize=6,
@@ -181,7 +184,7 @@ def plot_entities_normalized_and_absolute(data, save_path=None):
     width = 0.8 if len(plot_data) < 100 else 20
     ax1_hist.bar(
         plot_data.index,
-        plot_data["TotalDocuments"],
+        plot_data["document_count"],
         alpha=0.3,
         color="orange",
         width=width,
@@ -249,7 +252,7 @@ def plot_documents_over_time(data: pd.DataFrame, save_path: str | None = None) -
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with Date/Year as index and TotalDocuments column
+        DataFrame with Date/Year as index and document_count column
     save_path : str, optional
         Path to save the plot
 
@@ -261,7 +264,7 @@ def plot_documents_over_time(data: pd.DataFrame, save_path: str | None = None) -
         sample_data = data.iloc[::30]
         sns.lineplot(
             x=sample_data.index,
-            y="TotalDocuments",
+            y="document_count",
             data=sample_data,
             marker="o",
             color="orange",
@@ -270,7 +273,7 @@ def plot_documents_over_time(data: pd.DataFrame, save_path: str | None = None) -
     else:
         sns.lineplot(
             x=data.index,
-            y="TotalDocuments",
+            y="document_count",
             data=data,
             marker="o",
             color="orange",
@@ -303,7 +306,7 @@ def plot_entities_vs_documents(
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with ObservedEntities and TotalDocuments columns
+        DataFrame with co_count and document_count columns
     save_path : str, optional
         Path to save the plot
 
@@ -321,8 +324,8 @@ def plot_entities_vs_documents(
         hue_label = "Index"
 
     sns.scatterplot(
-        x="TotalDocuments",
-        y="ObservedEntities",
+        x="document_count",
+        y="co_count",
         data=data,
         hue=hue_values,
         palette="viridis",

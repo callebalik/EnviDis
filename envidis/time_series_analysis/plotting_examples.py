@@ -45,8 +45,8 @@ def load_sample_data():
     data = pd.DataFrame(
         {
             "Date": dates,
-            "ObservedEntities": co_counts,
-            "TotalDocuments": doc_counts,
+            "co_count": co_counts,
+            "document_count": doc_counts,
         },
     )
     data = data.set_index("Date")
@@ -66,13 +66,13 @@ def example_individual_plots() -> None:
         data.groupby(data.index.year)
         .agg(
             {
-                "ObservedEntities": "sum",
-                "TotalDocuments": "sum",
+                "co_count": "sum",
+                "document_count": "sum",
             },
         )
         .reset_index()
     )
-    yearly_data.columns = ["Year", "ObservedEntities", "TotalDocuments"]
+    yearly_data.columns = ["Year", "co_count", "document_count"]
 
     # Example 1: Raw time series plot
     fig, ax = plt.subplots(figsize=(12, 4))
@@ -113,13 +113,13 @@ def example_orchestrator_usage() -> None:
         data.groupby(data.index.year)
         .agg(
             {
-                "ObservedEntities": "sum",
-                "TotalDocuments": "sum",
+                "co_count": "sum",
+                "document_count": "sum",
             },
         )
         .reset_index()
     )
-    yearly_data.columns = ["Year", "ObservedEntities", "TotalDocuments"]
+    yearly_data.columns = ["Year", "co_count", "document_count"]
 
     # Create orchestrator
     orchestrator = PlotOrchestrator(output_dir="./example_plots")

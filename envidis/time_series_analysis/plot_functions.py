@@ -27,7 +27,7 @@ def plot_raw_timeseries(
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with datetime index and 'ObservedEntities' column
+        DataFrame with datetime index and 'co_count' column
     ax : plt.Axes, optional
         Matplotlib axes to plot on. If None, current axes used
     sample_rate : int
@@ -103,20 +103,16 @@ def plot_raw_timeseries(
     # Filter out extreme outliers using configurable percentile
     if default_kwargs.get("remove_outliers", True):
         percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
-        percentile_value = filtered_data["ObservedEntities"].quantile(
+        percentile_value = filtered_data["co_count"].quantile(
             percentile_threshold / 100,
         )
-        outlier_data = filtered_data[
-            filtered_data["ObservedEntities"] > percentile_value
-        ]
-        filtered_data = filtered_data[
-            filtered_data["ObservedEntities"] <= percentile_value
-        ]
+        outlier_data = filtered_data[filtered_data["co_count"] > percentile_value]
+        filtered_data = filtered_data[filtered_data["co_count"] <= percentile_value]
 
         # Add detailed note about filtering with specific information
         if len(outlier_data) > 0:
             outlier_years = sorted(outlier_data.index.year.unique())
-            max_outlier = outlier_data["ObservedEntities"].max()
+            max_outlier = outlier_data["co_count"].max()
 
             if len(outlier_years) <= 5:
                 year_list = ", ".join(map(str, outlier_years))
@@ -134,7 +130,7 @@ def plot_raw_timeseries(
 
     ax.scatter(
         sample_data.index,
-        sample_data["ObservedEntities"],
+        sample_data["co_count"],
         color=default_kwargs["color"],
         alpha=default_kwargs["alpha"],
         s=default_kwargs["s"],
@@ -142,10 +138,10 @@ def plot_raw_timeseries(
 
     # Set better y-axis limits to focus on the main data range
     if len(sample_data) > 0:
-        y_max = sample_data["ObservedEntities"].quantile(
+        y_max = sample_data["co_count"].quantile(
             0.95,
         )  # Use 95th percentile for upper limit
-        y_min = max(0, sample_data["ObservedEntities"].min())
+        y_min = max(0, sample_data["co_count"].min())
         ax.set_ylim(y_min, y_max * 1.05)  # Add 5% padding
 
     ax.set_title(default_kwargs["title"], fontsize=12, fontweight="bold")
@@ -187,7 +183,7 @@ def plot_yearly_aggregated(
     Parameters
     ----------
     yearly_data : pd.DataFrame
-        DataFrame with 'Year' and 'ObservedEntities' columns
+        DataFrame with 'Year' and 'co_count' columns
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     **kwargs : dict
@@ -233,7 +229,7 @@ def plot_yearly_aggregated(
             if (
                 next_year - year > 50
                 and len(year_data) == 1
-                and year_data["ObservedEntities"].iloc[0] < 10
+                and year_data["co_count"].iloc[0] < 10
             ):
                 start_year = next_year
             else:
@@ -256,7 +252,7 @@ def plot_yearly_aggregated(
     # Plot as scatter points
     ax.scatter(
         final_filtered_data["Year"],
-        final_filtered_data["ObservedEntities"],
+        final_filtered_data["co_count"],
         color=default_kwargs["color"],
         marker=default_kwargs["marker"],
         s=default_kwargs["markersize"] ** 2,
@@ -267,8 +263,8 @@ def plot_yearly_aggregated(
 
     # Set y-axis limits to show all data (no filtering)
     if len(final_filtered_data) > 0:
-        y_max = final_filtered_data["ObservedEntities"].max()
-        y_min = max(0, final_filtered_data["ObservedEntities"].min())
+        y_max = final_filtered_data["co_count"].max()
+        y_min = max(0, final_filtered_data["co_count"].min())
         ax.set_ylim(y_min, y_max * 1.05)  # Add 5% padding above max
 
     # Add trend line if requested (use all data)
@@ -276,7 +272,7 @@ def plot_yearly_aggregated(
         try:
             z = np.polyfit(
                 final_filtered_data["Year"],
-                final_filtered_data["ObservedEntities"],
+                final_filtered_data["co_count"],
                 1,
             )
             p = np.poly1d(z)
@@ -295,13 +291,12 @@ def plot_yearly_aggregated(
     # Add co-occurrence rate (co-occurrences per document) if document data available
     if (
         default_kwargs.get("show_rate", True)
-        and "TotalDocuments" in final_filtered_data.columns
+        and "document_count" in final_filtered_data.columns
     ):
         try:
             # Calculate rate using all data
             rate = (
-                final_filtered_data["ObservedEntities"]
-                / final_filtered_data["TotalDocuments"]
+                final_filtered_data["co_count"] / final_filtered_data["document_count"]
             )
 
             ax2 = ax.twinx()
@@ -381,7 +376,7 @@ def plot_distribution(
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with 'ObservedEntities' column
+        DataFrame with 'co_count' column
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     log_scale : bool
@@ -413,13 +408,13 @@ def plot_distribution(
     # Filter out extreme outliers using configurable percentile
     if default_kwargs.get("remove_outliers", True):
         percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
-        percentile_value = data["ObservedEntities"].quantile(percentile_threshold / 100)
-        outlier_data = data[data["ObservedEntities"] > percentile_value]
-        filtered_data = data[data["ObservedEntities"] <= percentile_value]
+        percentile_value = data["co_count"].quantile(percentile_threshold / 100)
+        outlier_data = data[data["co_count"] > percentile_value]
+        filtered_data = data[data["co_count"] <= percentile_value]
 
         # Add detailed note about filtering
         if len(outlier_data) > 0:
-            max_outlier = outlier_data["ObservedEntities"].max()
+            max_outlier = outlier_data["co_count"].max()
             outlier_count = len(outlier_data)
             outlier_percentage = (outlier_count / len(data)) * 100
 
@@ -437,14 +432,12 @@ def plot_distribution(
         filtered_data = data
 
     if log_scale:
-        non_zero_data = filtered_data[filtered_data["ObservedEntities"] > 0][
-            "ObservedEntities"
-        ]
+        non_zero_data = filtered_data[filtered_data["co_count"] > 0]["co_count"]
         plot_data = np.log10(non_zero_data + 1)
         default_kwargs["title"] += " (Log Scale)"
         default_kwargs["xlabel"] = "Log10(Count + 1)"
     else:
-        plot_data = filtered_data["ObservedEntities"]
+        plot_data = filtered_data["co_count"]
 
     ax.hist(
         plot_data,
@@ -471,7 +464,7 @@ def plot_monthly_patterns(
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with datetime index and 'ObservedEntities' column
+        DataFrame with datetime index and 'co_count' column
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     start_year : int
@@ -499,9 +492,7 @@ def plot_monthly_patterns(
 
     recent_data = data[data.index.year >= start_year]
     if len(recent_data) > 0:
-        monthly_means = recent_data.groupby(recent_data.index.month)[
-            "ObservedEntities"
-        ].mean()
+        monthly_means = recent_data.groupby(recent_data.index.month)["co_count"].mean()
         ax.bar(
             monthly_means.index,
             monthly_means.values,
@@ -527,7 +518,7 @@ def plot_scatter_documents_vs_cooccurrence(
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with 'TotalDocuments' and 'ObservedEntities' columns
+        DataFrame with 'document_count' and 'co_count' columns
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     sample_size : int
@@ -559,15 +550,15 @@ def plot_scatter_documents_vs_cooccurrence(
     # Filter out extreme outliers using configurable percentile
     if default_kwargs.get("remove_outliers", True):
         percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
-        doc_percentile = data["TotalDocuments"].quantile(percentile_threshold / 100)
-        cooc_percentile = data["ObservedEntities"].quantile(percentile_threshold / 100)
+        doc_percentile = data["document_count"].quantile(percentile_threshold / 100)
+        cooc_percentile = data["co_count"].quantile(percentile_threshold / 100)
 
-        doc_outliers = data[data["TotalDocuments"] > doc_percentile]
-        cooc_outliers = data[data["ObservedEntities"] > cooc_percentile]
+        doc_outliers = data[data["document_count"] > doc_percentile]
+        cooc_outliers = data[data["co_count"] > cooc_percentile]
 
         filtered_data = data[
-            (data["TotalDocuments"] <= doc_percentile)
-            & (data["ObservedEntities"] <= cooc_percentile)
+            (data["document_count"] <= doc_percentile)
+            & (data["co_count"] <= cooc_percentile)
         ]
 
         # Add detailed note about filtering
@@ -575,10 +566,10 @@ def plot_scatter_documents_vs_cooccurrence(
         if outliers_removed > 0:
             outlier_details = []
             if len(doc_outliers) > 0:
-                max_docs = doc_outliers["TotalDocuments"].max()
+                max_docs = doc_outliers["document_count"].max()
                 outlier_details.append(f"docs>{doc_percentile:.0f} (max={max_docs:,})")
             if len(cooc_outliers) > 0:
-                max_cooc = cooc_outliers["ObservedEntities"].max()
+                max_cooc = cooc_outliers["co_count"].max()
                 outlier_details.append(f"cooc>{cooc_percentile:.0f} (max={max_cooc:,})")
 
             default_kwargs[
@@ -593,8 +584,8 @@ def plot_scatter_documents_vs_cooccurrence(
     )
 
     ax.scatter(
-        sample_data["TotalDocuments"],
-        sample_data["ObservedEntities"],
+        sample_data["document_count"],
+        sample_data["co_count"],
         alpha=default_kwargs["alpha"],
         s=default_kwargs["s"],
         color=default_kwargs["color"],
@@ -676,7 +667,7 @@ def plot_trend_analysis(
     Parameters
     ----------
     yearly_data : pd.DataFrame
-        DataFrame with 'Year' and 'ObservedEntities' columns
+        DataFrame with 'Year' and 'co_count' columns
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     fit_trend : bool
@@ -714,17 +705,15 @@ def plot_trend_analysis(
     filtered_data = yearly_data
     if default_kwargs.get("remove_outliers", True) and len(yearly_data) > 0:
         percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
-        percentile_value = yearly_data["ObservedEntities"].quantile(
+        percentile_value = yearly_data["co_count"].quantile(
             percentile_threshold / 100,
         )
-        outlier_data = yearly_data[yearly_data["ObservedEntities"] > percentile_value]
-        filtered_data = yearly_data[yearly_data["ObservedEntities"] <= percentile_value]
+        outlier_data = yearly_data[yearly_data["co_count"] > percentile_value]
+        filtered_data = yearly_data[yearly_data["co_count"] <= percentile_value]
 
         if len(outlier_data) > 0:
             outlier_years = sorted(outlier_data["Year"].tolist())
-            outlier_values = outlier_data.set_index("Year")[
-                "ObservedEntities"
-            ].to_dict()
+            outlier_values = outlier_data.set_index("Year")["co_count"].to_dict()
 
             if len(outlier_years) <= 3:
                 year_details = [
@@ -741,7 +730,7 @@ def plot_trend_analysis(
 
     if len(filtered_data) > 10:
         years = filtered_data["Year"]
-        counts = filtered_data["ObservedEntities"]
+        counts = filtered_data["co_count"]
 
         # Plot observed data as scatter points
         ax.scatter(
@@ -818,7 +807,7 @@ def plot_zero_inflation_pie(
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with 'ObservedEntities' column
+        DataFrame with 'co_count' column
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     **kwargs : dict
@@ -840,8 +829,8 @@ def plot_zero_inflation_pie(
     }
     default_kwargs.update(kwargs)
 
-    zero_counts = (data["ObservedEntities"] == 0).sum()
-    non_zero_counts = (data["ObservedEntities"] > 0).sum()
+    zero_counts = (data["co_count"] == 0).sum()
+    non_zero_counts = (data["co_count"] > 0).sum()
 
     ax.pie(
         [zero_counts, non_zero_counts],
@@ -866,7 +855,7 @@ def plot_recent_trend_bar(
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with datetime index and 'ObservedEntities' column
+        DataFrame with datetime index and 'co_count' column
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     start_year : int
@@ -899,7 +888,7 @@ def plot_recent_trend_bar(
 
     if len(recent_data_subset) > 0:
         recent_yearly = recent_data_subset.groupby(recent_data_subset.index.year)[
-            "ObservedEntities"
+            "co_count"
         ].sum()
 
         # Filter outliers using configurable percentile
@@ -1028,7 +1017,7 @@ def plot_data_quality_table(
     Parameters
     ----------
     data : pd.DataFrame
-        DataFrame with datetime index and 'ObservedEntities' column
+        DataFrame with datetime index and 'co_count' column
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     **kwargs : dict
@@ -1058,10 +1047,10 @@ def plot_data_quality_table(
         ["Date Range", f"{data.index.min().date()} to {data.index.max().date()}"],
         [
             "Zero Values",
-            f"{(data['ObservedEntities'] == 0).sum():,} ({(data['ObservedEntities'] == 0).mean()*100:.1f}%)",
+            f"{(data['co_count'] == 0).sum():,} ({(data['co_count'] == 0).mean()*100:.1f}%)",
         ],
-        ["Max Co-occurrence", f"{data['ObservedEntities'].max():,}"],
-        ["Mean Co-occurrence", f"{data['ObservedEntities'].mean():.2f}"],
+        ["Max Co-occurrence", f"{data['co_count'].max():,}"],
+        ["Mean Co-occurrence", f"{data['co_count'].mean():.2f}"],
         ["Years Covered", f"{data.index.year.nunique()}"],
     ]
 
@@ -1091,7 +1080,7 @@ def plot_time_series_decomposition(
     Parameters
     ----------
     yearly_data : pd.DataFrame
-        DataFrame with 'Year' and 'ObservedEntities' columns
+        DataFrame with 'Year' and 'co_count' columns
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     window : int, optional
@@ -1127,17 +1116,15 @@ def plot_time_series_decomposition(
     filtered_data = yearly_data
     if default_kwargs.get("remove_outliers", True) and len(yearly_data) > 0:
         percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
-        percentile_value = yearly_data["ObservedEntities"].quantile(
+        percentile_value = yearly_data["co_count"].quantile(
             percentile_threshold / 100,
         )
-        outlier_data = yearly_data[yearly_data["ObservedEntities"] > percentile_value]
-        filtered_data = yearly_data[yearly_data["ObservedEntities"] <= percentile_value]
+        outlier_data = yearly_data[yearly_data["co_count"] > percentile_value]
+        filtered_data = yearly_data[yearly_data["co_count"] <= percentile_value]
 
         if len(outlier_data) > 0:
             outlier_years = sorted(outlier_data["Year"].tolist())
-            outlier_values = outlier_data.set_index("Year")[
-                "ObservedEntities"
-            ].to_dict()
+            outlier_values = outlier_data.set_index("Year")["co_count"].to_dict()
 
             if len(outlier_years) <= 2:
                 year_details = [
@@ -1156,13 +1143,13 @@ def plot_time_series_decomposition(
             window = min(5, len(filtered_data) // 4)
 
         rolling_mean = (
-            pd.Series(filtered_data["ObservedEntities"]).rolling(window=window).mean()
+            pd.Series(filtered_data["co_count"]).rolling(window=window).mean()
         )
 
         # Plot original data as scatter points
         ax.scatter(
             filtered_data["Year"],
-            filtered_data["ObservedEntities"],
+            filtered_data["co_count"],
             color=default_kwargs["original_color"],
             alpha=default_kwargs["original_alpha"],
             s=default_kwargs["original_markersize"] ** 2,
@@ -1182,8 +1169,8 @@ def plot_time_series_decomposition(
         )
 
         # Set better y-axis limits
-        y_max = filtered_data["ObservedEntities"].quantile(0.95)
-        y_min = max(0, filtered_data["ObservedEntities"].min())
+        y_max = filtered_data["co_count"].quantile(0.95)
+        y_min = max(0, filtered_data["co_count"].min())
         ax.set_ylim(y_min, y_max * 1.05)
 
         ax.legend(fontsize=9)
@@ -1227,7 +1214,7 @@ def plot_publication_volume_context(
     Parameters
     ----------
     yearly_data : pd.DataFrame
-        DataFrame with 'Year', 'ObservedEntities', and 'TotalDocuments' columns
+        DataFrame with 'Year', 'co_count', and 'document_count' columns
     ax : plt.Axes, optional
         Matplotlib axes to plot on
     **kwargs : dict
@@ -1252,25 +1239,23 @@ def plot_publication_volume_context(
     }
     default_kwargs.update(kwargs)
 
-    if "TotalDocuments" in yearly_data.columns:
+    if "document_count" in yearly_data.columns:
         # Filter out extreme outliers using configurable percentile
         if default_kwargs.get("remove_outliers", False):  # Changed default to False
             percentile_threshold = default_kwargs.get("outlier_percentile", 99.7)
-            doc_percentile = yearly_data["TotalDocuments"].quantile(
+            doc_percentile = yearly_data["document_count"].quantile(
                 percentile_threshold / 100,
             )
-            cooc_percentile = yearly_data["ObservedEntities"].quantile(
+            cooc_percentile = yearly_data["co_count"].quantile(
                 percentile_threshold / 100,
             )
 
-            doc_outliers = yearly_data[yearly_data["TotalDocuments"] > doc_percentile]
-            cooc_outliers = yearly_data[
-                yearly_data["ObservedEntities"] > cooc_percentile
-            ]
+            doc_outliers = yearly_data[yearly_data["document_count"] > doc_percentile]
+            cooc_outliers = yearly_data[yearly_data["co_count"] > cooc_percentile]
 
             filtered_data = yearly_data[
-                (yearly_data["TotalDocuments"] <= doc_percentile)
-                & (yearly_data["ObservedEntities"] <= cooc_percentile)
+                (yearly_data["document_count"] <= doc_percentile)
+                & (yearly_data["co_count"] <= cooc_percentile)
             ]
 
             # Add detailed note about filtering
@@ -1280,10 +1265,10 @@ def plot_publication_volume_context(
                 if len(doc_outliers) > 0:
                     doc_outlier_years = sorted(doc_outliers["Year"].tolist())
                     max_doc_year = doc_outliers.loc[
-                        doc_outliers["TotalDocuments"].idxmax(),
+                        doc_outliers["document_count"].idxmax(),
                         "Year",
                     ]
-                    max_docs = doc_outliers["TotalDocuments"].max()
+                    max_docs = doc_outliers["document_count"].max()
                     if len(doc_outlier_years) <= 2:
                         outlier_details.append(
                             f"high-doc years {', '.join(map(str, doc_outlier_years))}",
@@ -1313,7 +1298,7 @@ def plot_publication_volume_context(
         # Plot document counts
         ax.bar(
             filtered_data["Year"],
-            filtered_data["TotalDocuments"],
+            filtered_data["document_count"],
             color=default_kwargs["doc_color"],
             alpha=default_kwargs["alpha"],
             label="Total Documents",
@@ -1324,7 +1309,7 @@ def plot_publication_volume_context(
 
         # Add co-occurrence rate on secondary axis
         ax2 = ax.twinx()
-        rate = filtered_data["ObservedEntities"] / filtered_data["TotalDocuments"]
+        rate = filtered_data["co_count"] / filtered_data["document_count"]
         ax2.plot(
             filtered_data["Year"],
             rate,

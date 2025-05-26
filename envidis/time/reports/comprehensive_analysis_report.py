@@ -30,7 +30,13 @@ sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
 class ComprehensiveAnalysisReport:
     """Generate a comprehensive analysis report with all relevant statistics and visualizations."""
 
-    def __init__(self, data=None, data_path=None, output_dir=None, use_real_data=False):
+    def __init__(
+        self,
+        data: pd.DataFrame | None = None,
+        data_path: str | None = None,
+        output_dir=None,
+        use_real_data=False,
+    ):
         """Initialize the comprehensive analysis report.
 
         Parameters
@@ -85,13 +91,11 @@ class ComprehensiveAnalysisReport:
         df = pd.read_csv(self.data_path)
 
         # Convert date column to datetime
-        df["Date"] = pd.to_datetime(df["pubdate_resolved"])
+        df["Date"] = pd.to_datetime(df["date"])
 
         # Rename for consistency with existing framework
-        df["ObservedEntities"] = df[
-            "co_count"
-        ]  # Use co-occurrence count as dependent variable
-        df["TotalDocuments"] = df["document_count"]
+        df["co_count"] = df["co_count"]  # Use co-occurrence count as dependent variable
+        df["document_count"] = df["document_count"]
 
         # Create time variables for modeling
         df["Year"] = df["Date"].dt.year
@@ -115,7 +119,7 @@ class ComprehensiveAnalysisReport:
         print(f"Prepared data shape: {df.shape}")
         print(f"Date range: {df.index.min()} to {df.index.max()}")
         print(
-            f"ObservedEntities (co_count) range: {df['ObservedEntities'].min()} to {df['ObservedEntities'].max()}",
+            f"co_count (co_count) range: {df['co_count'].min()} to {df['co_count'].max()}",
         )
 
         return df
@@ -197,8 +201,8 @@ class ComprehensiveAnalysisReport:
             sample_size = min(5000, len(self.data))
             modeling_data = self.data.sample(n=sample_size, random_state=42)
             # Also filter out extreme outliers that might cause convergence issues
-            q95 = modeling_data["ObservedEntities"].quantile(0.95)
-            modeling_data = modeling_data[modeling_data["ObservedEntities"] <= q95]
+            q95 = modeling_data["co_count"].quantile(0.95)
+            modeling_data = modeling_data[modeling_data["co_count"] <= q95]
         else:
             modeling_data = self.data.copy()
 
@@ -236,7 +240,7 @@ class ComprehensiveAnalysisReport:
                     conf_int = None
 
                 for param in model.params.index:
-                    coef_data.append(
+                    coef_data.append(  # noqa: PERF401
                         {
                             "Model": model_name.replace("_", " ").title(),
                             "Parameter": param,
@@ -313,13 +317,13 @@ class ComprehensiveAnalysisReport:
                 self.data.groupby(self.data.index.year)
                 .agg(
                     {
-                        "ObservedEntities": "sum",
-                        "TotalDocuments": "sum",
+                        "co_count": "sum",
+                        "document_count": "sum",
                     },
                 )
                 .reset_index()
             )
-            yearly_data.columns = ["Year", "ObservedEntities", "TotalDocuments"]
+            yearly_data.columns = ["Year", "co_count", "document_count"]
 
         # Create model summary and coefficients tables
         model_summary = self.create_model_summary_table()
@@ -375,7 +379,7 @@ class ComprehensiveAnalysisReport:
         # Entities over time
         line1 = ax1.plot(
             viz_data.index,
-            viz_data["ObservedEntities"],
+            viz_data["co_count"],
             "o-",
             color=colors[0],
             linewidth=2,
@@ -389,7 +393,7 @@ class ComprehensiveAnalysisReport:
         # Documents as bars
         bars = ax1_twin.bar(
             viz_data.index,
-            viz_data["TotalDocuments"],
+            viz_data["document_count"],
             alpha=0.3,
             color=colors[1],
             width=0.8 if not is_date_index else 365,
@@ -417,13 +421,11 @@ class ComprehensiveAnalysisReport:
 
         # 2. Normalized vs Absolute Trends
         ax2 = fig.add_subplot(gs[0, 2:4])
-        normalized_entities = (
-            viz_data["ObservedEntities"] / viz_data["TotalDocuments"]
-        ) * 1000
+        normalized_entities = (viz_data["co_count"] / viz_data["document_count"]) * 1000
 
         ax2.plot(
             viz_data.index,
-            viz_data["ObservedEntities"],
+            viz_data["co_count"],
             "o-",
             color=colors[0],
             linewidth=2,
@@ -553,7 +555,7 @@ class ComprehensiveAnalysisReport:
         # Plot data points (sample for large datasets)
         ax4.scatter(
             viz_data.index,
-            viz_data["ObservedEntities"],
+            viz_data["co_count"],
             alpha=0.6,
             color=colors[0],
             s=30,
@@ -1044,8 +1046,8 @@ COMPREHENSIVE ANALYSIS SUMMARY
 
 Dataset Overview:
 - Time period: {date_range} ({len(self.data):,} observations)
-- Entities range: {self.data['ObservedEntities'].min():,}-{self.data['ObservedEntities'].max():,}
-- Documents range: {self.data['TotalDocuments'].min():,}-{self.data['TotalDocuments'].max():,}
+- Entities range: {self.data['co_count'].min():,}-{self.data['co_count'].max():,}
+- Documents range: {self.data['document_count'].min():,}-{self.data['document_count'].max():,}
 
 Best Model Selection:
 """

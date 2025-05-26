@@ -39,13 +39,13 @@ def demo_enhanced_visualizations() -> None:
     # Show basic statistics
     print("\nData Summary:")
     print(
-        f"  Entities range: {data['ObservedEntities'].min()} - {data['ObservedEntities'].max()}",
+        f"  Entities range: {data['co_count'].min()} - {data['co_count'].max()}",
     )
     print(
-        f"  Documents range: {data['TotalDocuments'].min()} - {data['TotalDocuments'].max()}",
+        f"  Documents range: {data['document_count'].min()} - {data['document_count'].max()}",
     )
     print(
-        f"  Mean entities per 1000 docs: {(data['ObservedEntities'] / data['TotalDocuments'] * 1000).mean():.2f}",
+        f"  Mean entities per 1000 docs: {(data['co_count'] / data['document_count'] * 1000).mean():.2f}",
     )
 
     # Fit trend models (always on absolute counts)

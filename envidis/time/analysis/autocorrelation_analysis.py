@@ -113,7 +113,7 @@ class AutocorrelationAnalyzer:
         Parameters
         ----------
         data : pd.DataFrame
-            Original data with Year as index and ObservedEntities column
+            Original data with Year as index and co_count column
         save_path : str, optional
             Path to save the plot
 
@@ -122,7 +122,7 @@ class AutocorrelationAnalyzer:
         fitted_values = self.model_results.fittedvalues
 
         # Align actual values with fitted values using the same index
-        actual_values = data.loc[fitted_values.index, "ObservedEntities"]
+        actual_values = data.loc[fitted_values.index, "co_count"]
         years = fitted_values.index
 
         # Create the plot
@@ -158,7 +158,7 @@ class AutocorrelationAnalyzer:
             conf_int = predictions.conf_int()
 
             # Handle both numpy arrays and pandas DataFrames
-            if hasattr(conf_int, 'iloc'):
+            if hasattr(conf_int, "iloc"):
                 # pandas DataFrame
                 plt.fill_between(
                     years,
@@ -313,8 +313,8 @@ class LaggedModelFitter:
         self.lagged_data = self.data.copy()
 
         for lag in lag_periods:
-            lag_col = f"ObservedEntities_lag{lag}"
-            self.lagged_data[lag_col] = self.lagged_data["ObservedEntities"].shift(lag)
+            lag_col = f"co_count_lag{lag}"
+            self.lagged_data[lag_col] = self.lagged_data["co_count"].shift(lag)
 
         # Drop rows with NaN values
         self.lagged_data = self.lagged_data.dropna()
@@ -339,7 +339,7 @@ class LaggedModelFitter:
         if isinstance(lag_periods, int):
             lag_periods = [lag_periods]
 
-        lag_terms = [f"ObservedEntities_lag{lag}" for lag in lag_periods]
+        lag_terms = [f"co_count_lag{lag}" for lag in lag_periods]
         lagged_formula = base_formula + " + " + " + ".join(lag_terms)
 
         # Fit model
@@ -396,7 +396,7 @@ class LaggedModelFitter:
         # Get data for plotting (excluding NaN values from lagging)
         plot_data = self.lagged_data.dropna()
         fitted_values = self.lagged_results.fittedvalues
-        actual_values = plot_data["ObservedEntities"]
+        actual_values = plot_data["co_count"]
         years = plot_data.index
 
         plt.figure(figsize=(12, 8))
@@ -466,7 +466,7 @@ class LaggedModelFitter:
         # Get fitted values from both models
         base_fitted = self.base_model_results.fittedvalues
         lagged_fitted = self.lagged_results.fittedvalues
-        actual_values = plot_data["ObservedEntities"]
+        actual_values = plot_data["co_count"]
         years = plot_data.index
 
         # Align base model fitted values with lagged data

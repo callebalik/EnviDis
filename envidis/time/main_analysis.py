@@ -20,6 +20,13 @@ from envidis.time.demo.data_generation import (
 )
 from envidis.time.plots.data_visualization import create_all_plots
 
+# Column name constants
+OBSERVED_ENTITIES_COL = "co_count"
+COOC_COL = "co_count"
+PUBDATE_COL = "date"
+DAYS_SINCE_START_COL = "DaysSinceStart"
+DAYS_SINCE_START_SCALED_COL = "DaysSinceStart_scaled"
+
 
 class TimeSeriesAnalysisPipeline:
     """Complete time series analysis pipeline."""
@@ -41,7 +48,11 @@ class TimeSeriesAnalysisPipeline:
         """Load existing data or generate sample data with daily resolution."""
         if self.data_path and os.path.exists(self.data_path):
             print(f"Loading data from {self.data_path}")
-            self.data = pd.read_csv(self.data_path, index_col="Date", parse_dates=True)
+            self.data = pd.read_csv(
+                self.data_path,
+                index_col=PUBDATE_COL,
+                parse_dates=True,
+            )
         else:
             print("Generating daily sample data...")
             self.data = generate_daily_sample_data()
@@ -70,7 +81,7 @@ class TimeSeriesAnalysisPipeline:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
 
         # Daily time series (sampled)
-        ax1.plot(sample_data.index, sample_data["ObservedEntities"], "b-", alpha=0.7)
+        ax1.plot(sample_data.index, sample_data[OBSERVED_ENTITIES_COL], "b-", alpha=0.7)
         ax1.set_title("Daily Observed Entities (Every 30 Days)")
         ax1.set_ylabel("Observed Entities")
         ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
@@ -80,7 +91,7 @@ class TimeSeriesAnalysisPipeline:
         monthly_data = self.data.resample("M").sum()
         ax2.plot(
             monthly_data.index,
-            monthly_data["ObservedEntities"],
+            monthly_data[OBSERVED_ENTITIES_COL],
             "r-",
             linewidth=2,
         )
@@ -109,12 +120,13 @@ class TimeSeriesAnalysisPipeline:
         modeling_data = self.data.copy()
 
         # Add time variables for daily modeling
-        modeling_data["DaysSinceStart"] = (
+        modeling_data[DAYS_SINCE_START_COL] = (
             modeling_data.index - modeling_data.index.min()
         ).days
-        modeling_data["DaysSinceStart_scaled"] = (
-            modeling_data["DaysSinceStart"] - modeling_data["DaysSinceStart"].mean()
-        ) / modeling_data["DaysSinceStart"].std()
+        modeling_data[DAYS_SINCE_START_SCALED_COL] = (
+            modeling_data[DAYS_SINCE_START_COL]
+            - modeling_data[DAYS_SINCE_START_COL].mean()
+        ) / modeling_data[DAYS_SINCE_START_COL].std()
 
         self.basic_fitter = BasicModelFitter(modeling_data)
         self.basic_fitter.fit_poisson_model()
@@ -127,12 +139,13 @@ class TimeSeriesAnalysisPipeline:
 
         # Prepare data for modeling
         modeling_data = self.data.copy()
-        modeling_data["DaysSinceStart"] = (
+        modeling_data[DAYS_SINCE_START_COL] = (
             modeling_data.index - modeling_data.index.min()
         ).days
-        modeling_data["DaysSinceStart_scaled"] = (
-            modeling_data["DaysSinceStart"] - modeling_data["DaysSinceStart"].mean()
-        ) / modeling_data["DaysSinceStart"].std()
+        modeling_data[DAYS_SINCE_START_SCALED_COL] = (
+            modeling_data[DAYS_SINCE_START_COL]
+            - modeling_data[DAYS_SINCE_START_COL].mean()
+        ) / modeling_data[DAYS_SINCE_START_COL].std()
 
         # For very large datasets, consider sampling
         if len(modeling_data) > 10000:
@@ -264,12 +277,12 @@ class TimeSeriesAnalysisPipeline:
 def main() -> None:
     """Main function to run the analysis."""
     # Option 1: Use existing data
-    # pipeline = TimeSeriesAnalysisPipeline(
-    #     data_path="data/raw/time-series/time_series.csv",
-    # )
+    pipeline = TimeSeriesAnalysisPipeline(
+        data_path="data/raw/time-series/time_series.csv",
+    )
 
     # Option 2: Generate sample data (default)
-    pipeline = TimeSeriesAnalysisPipeline()
+    # pipeline = TimeSeriesAnalysisPipeline()
 
     # Run complete analysis
     pipeline.run_complete_analysis()
