@@ -36,6 +36,8 @@ class ComprehensiveAnalysisReport:
         data_path: str | None = None,
         output_dir: str | None = None,
         use_real_data: bool = False,
+        start_date: str | None = None,
+        end_date: str | None = None,
     ):
         """Initialize the comprehensive analysis report.
 
@@ -49,6 +51,10 @@ class ComprehensiveAnalysisReport:
             Directory to save outputs
         use_real_data : bool, optional
             Whether to load real data from CSV
+        start_date : str or datetime, optional
+            Start date for analysis (inclusive). Format: 'YYYY-MM-DD' or datetime object
+        end_date : str or datetime, optional
+            End date for analysis (inclusive). Format: 'YYYY-MM-DD' or datetime object
 
         """
         self.output_dir = output_dir or "/home/callebalik/EnviDis/results/analysis"
@@ -59,6 +65,15 @@ class ComprehensiveAnalysisReport:
         self.data_path = (
             data_path or "/home/callebalik/EnviDis/data/raw/time-series/time_series.csv"
         )
+
+        # Store date filters
+        self.start_date = pd.to_datetime(start_date) if start_date else None
+        self.end_date = pd.to_datetime(end_date) if end_date else None
+
+        # Validate date range
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            msg = "start_date must be before or equal to end_date"
+            raise ValueError(msg)
 
         # Generate or use provided data
         if data is None:
@@ -92,6 +107,29 @@ class ComprehensiveAnalysisReport:
 
         # Convert date column to datetime
         df["Date"] = pd.to_datetime(df["date"])
+
+        # Apply date filtering if specified
+        original_length = len(df)
+        if self.start_date:
+            df = df[df["Date"] >= self.start_date]
+            print(
+                f"Filtered data from {self.start_date.date()}: {len(df)} records remaining",
+            )
+
+        if self.end_date:
+            df = df[df["Date"] <= self.end_date]
+            print(
+                f"Filtered data to {self.end_date.date()}: {len(df)} records remaining",
+            )
+
+        if self.start_date or self.end_date:
+            print(
+                f"Date filtering reduced dataset from {original_length:,} to {len(df):,} records",
+            )
+
+        if len(df) == 0:
+            msg = "No data remains after applying date filters"
+            raise ValueError(msg)
 
         # Rename for consistency with existing framework
         df["co_count"] = df["co_count"]  # Use co-occurrence count as dependent variable
@@ -1045,7 +1083,17 @@ COMPREHENSIVE ANALYSIS SUMMARY
 ================================
 
 Dataset Overview:
-- Time period: {date_range} ({len(self.data):,} observations)
+- Time period: {date_range} ({len(self.data):,} observations)"""
+
+        # Add filter information if applicable
+        if self.start_date or self.end_date:
+            summary_text += "\n- Applied date filters:"
+            if self.start_date:
+                summary_text += f"\n  - Start date: {self.start_date.date()}"
+            if self.end_date:
+                summary_text += f"\n  - End date: {self.end_date.date()}"
+
+        summary_text += f"""
 - Entities range: {self.data['co_count'].min():,}-{self.data['co_count'].max():,}
 - Documents range: {self.data['document_count'].min():,}-{self.data['document_count'].max():,}
 
@@ -1120,43 +1168,51 @@ Best Model Selection:
         # Create the comprehensive visualization
         fig = self.create_comprehensive_visualization()
 
+        # Create filename suffix for filtered data
+        filename_suffix = ""
+        if self.start_date or self.end_date:
+            date_parts = []
+            if self.start_date:
+                date_parts.append(f"from_{self.start_date.strftime('%Y%m%d')}")
+            if self.end_date:
+                date_parts.append(f"to_{self.end_date.strftime('%Y%m%d')}")
+            filename_suffix = f"_{'_'.join(date_parts)}"
+
         # Save the main report
-        report_path = (
-            f"{self.output_dir}/comprehensive_report/comprehensive_analysis_report.png"
-        )
+        report_path = f"{self.output_dir}/comprehensive_report/comprehensive_analysis_report{filename_suffix}.png"
         fig.savefig(report_path, dpi=300, bbox_inches="tight", facecolor="white")
         print(f"Comprehensive visualization saved to: {report_path}")
 
         # Save individual tables
         model_summary = self.create_model_summary_table()
         model_summary.to_csv(
-            f"{self.output_dir}/comprehensive_report/model_summary.csv",
+            f"{self.output_dir}/comprehensive_report/model_summary{filename_suffix}.csv",
             index=False,
         )
 
         coef_table = self.create_coefficients_table()
         coef_table.to_csv(
-            f"{self.output_dir}/comprehensive_report/coefficients_table.csv",
+            f"{self.output_dir}/comprehensive_report/coefficients_table{filename_suffix}.csv",
             index=False,
         )
 
         # Save text summary
         summary_text = self.create_diagnostic_summary_text()
         with open(
-            f"{self.output_dir}/comprehensive_report/analysis_summary.txt",
+            f"{self.output_dir}/comprehensive_report/analysis_summary{filename_suffix}.txt",
             "w",
         ) as f:
             f.write(summary_text)
 
         print("Additional files saved:")
         print(
-            f"- Model summary: {self.output_dir}/comprehensive_report/model_summary.csv",
+            f"- Model summary: {self.output_dir}/comprehensive_report/model_summary{filename_suffix}.csv",
         )
         print(
-            f"- Coefficients: {self.output_dir}/comprehensive_report/coefficients_table.csv",
+            f"- Coefficients: {self.output_dir}/comprehensive_report/coefficients_table{filename_suffix}.csv",
         )
         print(
-            f"- Text summary: {self.output_dir}/comprehensive_report/analysis_summary.txt",
+            f"- Text summary: {self.output_dir}/comprehensive_report/analysis_summary{filename_suffix}.txt",
         )
 
         # Display the plot
@@ -1171,7 +1227,7 @@ Best Model Selection:
         }
 
 
-def main(use_real_data=False, data_path=None):
+def main(use_real_data=False, data_path=None, start_date=None, end_date=None):
     """Main function to run the comprehensive analysis."""
     print("=" * 60)
     print("COMPREHENSIVE TIME SERIES ANALYSIS REPORT")
@@ -1183,10 +1239,15 @@ def main(use_real_data=False, data_path=None):
         report_generator = ComprehensiveAnalysisReport(
             use_real_data=True,
             data_path=data_path,
+            start_date=start_date,
+            end_date=end_date,
         )
     else:
         print("Using synthetic sample data...")
-        report_generator = ComprehensiveAnalysisReport()
+        report_generator = ComprehensiveAnalysisReport(
+            start_date=start_date,
+            end_date=end_date,
+        )
 
     # Generate the complete report
     results = report_generator.generate_report()
@@ -1198,9 +1259,14 @@ def main(use_real_data=False, data_path=None):
     return results
 
 
-def main_real_data(data_path=None):
+def main_real_data(data_path=None, start_date=None, end_date=None):
     """Convenience function to run analysis on real data."""
-    return main(use_real_data=True, data_path=data_path)
+    return main(
+        use_real_data=True,
+        data_path=data_path,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 
 if __name__ == "__main__":
@@ -1211,4 +1277,6 @@ if __name__ == "__main__":
         results = main()
     else:
         data_path = sys.argv[2] if len(sys.argv) > 2 else None
-        results = main_real_data(data_path)
+        start_date = sys.argv[3] if len(sys.argv) > 3 else "1960-01-01"
+        end_date = sys.argv[4] if len(sys.argv) > 4 else "2024-12-31"
+        results = main_real_data(data_path, start_date, end_date)
