@@ -28,7 +28,7 @@ class BasicModelFitter:
 
     def fit_poisson_model(self) -> Any:
         """Fit Poisson regression model."""
-        formula = "ObservedEntities ~ Year_scaled + TotalDocuments"
+        formula = "ObservedEntities ~ DaysSinceStart_scaled + TotalDocuments"
         poisson_model = smf.glm(
             formula=formula,
             data=self.data,
@@ -37,9 +37,9 @@ class BasicModelFitter:
         self.poisson_results = poisson_model.fit()
         return self.poisson_results
 
-    def fit_negative_binomial_model(self):
+    def fit_negative_binomial_model(self) -> Any:
         """Fit Negative Binomial regression model."""
-        formula = "ObservedEntities ~ Year_scaled + TotalDocuments"
+        formula = "ObservedEntities ~ DaysSinceStart_scaled + TotalDocuments"
         nb_model = smf.glm(
             formula=formula,
             data=self.data,

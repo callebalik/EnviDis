@@ -113,6 +113,56 @@ def generate_sample_data(
     return data
 
 
+def generate_daily_sample_data(start_date="1990-01-01", end_date="2024-12-31", seed=42):
+    """Generate sample data with daily resolution."""
+    import numpy as np
+    import pandas as pd
+
+    np.random.seed(seed)
+
+    # Create daily date range
+    date_range = pd.date_range(start=start_date, end=end_date, freq="D")
+
+    # Generate synthetic daily data
+    n_days = len(date_range)
+
+    # Create time trends
+    time_numeric = np.arange(n_days)
+    time_scaled = (time_numeric - time_numeric.mean()) / time_numeric.std()
+
+    # Generate base trend with seasonal patterns
+    base_trend = 10 + 0.001 * time_numeric  # Slow increase over time
+    seasonal = 2 * np.sin(2 * np.pi * time_numeric / 365.25)  # Annual cycle
+    weekly = 0.5 * np.sin(2 * np.pi * time_numeric / 7)  # Weekly cycle
+
+    # Add noise
+    noise = np.random.normal(0, 1, n_days)
+
+    # Combine components
+    log_rate = base_trend + seasonal + weekly + noise
+    observed_entities = np.random.poisson(np.exp(log_rate))
+
+    # Generate document counts
+    total_documents = np.random.poisson(50 + 0.01 * time_numeric + 5 * seasonal)
+
+    # Create DataFrame with Date index
+    df = pd.DataFrame(
+        {
+            "ObservedEntities": observed_entities,
+            "TotalDocuments": total_documents,
+            "Year": date_range.year,
+            "Month": date_range.month,
+            "Day": date_range.day,
+            "DayOfYear": date_range.dayofyear,
+            "Year_scaled": time_scaled,
+        },
+        index=date_range,
+    )
+
+    df.index.name = "Date"
+    return df
+
+
 def save_sample_data(data, filepath) -> None:
     """Save the generated data to a CSV file."""
     data.to_csv(filepath)

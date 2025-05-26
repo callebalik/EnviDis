@@ -230,7 +230,10 @@ class ComprehensiveAnalysisReport:
         for model_name, model in self.models.items():
             if model is not None:
                 # Get confidence intervals
-                conf_int = model.conf_int(alpha=0.05)  # 95% CI
+                try:
+                    conf_int = model.conf_int(alpha=0.05)  # 95% CI
+                except Exception:
+                    conf_int = None
 
                 for param in model.params.index:
                     coef_data.append(

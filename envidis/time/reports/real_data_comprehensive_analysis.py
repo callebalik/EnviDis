@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real Data Comprehensive Analysis Report Generator.
+"""Real Data Comprehensive Analysis Report.
 
 This script creates a complete analysis for real time series data with date-level resolution.
 Adapted for co-occurrence data from 1794-2025.
@@ -238,7 +238,7 @@ class RealDataAnalysisReport:
                 # Get confidence intervals
                 try:
                     conf_int = model.conf_int(alpha=0.05)  # 95% CI
-                except:
+                except Exception:
                     conf_int = None
 
                 for param in model.params.index:

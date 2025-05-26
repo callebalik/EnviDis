@@ -290,7 +290,7 @@ class RealDataAnalysisReport:
                 # Get confidence intervals
                 try:
                     conf_int = model.conf_int(alpha=0.05)  # 95% CI
-                except:
+                except Exception:
                     conf_int = None
 
                 for param in model.params.index:

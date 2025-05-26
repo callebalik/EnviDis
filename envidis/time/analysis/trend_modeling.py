@@ -1,12 +1,12 @@
-"""
-Non-Monotonic Trend Modeling Script
+"""Non-Monotonic Trend Modeling Script
 This script handles polynomial and spline regression models for non-monotonic trends.
 """
 
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import statsmodels.formula.api as smf
+
 from envidis.time.analysis.basic_model_fitting import BasicModelFitter
 
 
@@ -14,15 +14,15 @@ class TrendModelFitter:
     """Class for fitting non-monotonic trend models."""
 
     def __init__(self, data, base_family=None):
-        """
-        Initialize with data and base model family.
+        """Initialize with data and base model family.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         data : pd.DataFrame
             DataFrame with required columns
         base_family : statsmodels family, optional
             Base family to use (Poisson or NegativeBinomial)
+
         """
         self.data = data
         if base_family is None:
@@ -43,40 +43,46 @@ class TrendModelFitter:
 
     def fit_linear_model(self):
         """Fit linear trend model."""
-        formula = "ObservedEntities ~ Year_scaled + TotalDocuments"
+        # Change from Year_scaled to DaysSinceStart_scaled
+        formula = "ObservedEntities ~ DaysSinceStart_scaled + TotalDocuments"
         model = smf.glm(formula=formula, data=self.data, family=self.base_family)
         self.linear_results = model.fit()
         return self.linear_results
 
     def fit_quadratic_model(self):
         """Fit quadratic trend model."""
-        formula = "ObservedEntities ~ Year_scaled + I(Year_scaled**2) + TotalDocuments"
+        # Change from Year_scaled to DaysSinceStart_scaled
+        formula = "ObservedEntities ~ DaysSinceStart_scaled + I(DaysSinceStart_scaled**2) + TotalDocuments"
         model = smf.glm(formula=formula, data=self.data, family=self.base_family)
         self.poly2_results = model.fit()
         return self.poly2_results
 
     def fit_cubic_model(self):
         """Fit cubic trend model."""
-        formula = "ObservedEntities ~ Year_scaled + I(Year_scaled**2) + I(Year_scaled**3) + TotalDocuments"
+        # Change from Year_scaled to DaysSinceStart_scaled
+        formula = "ObservedEntities ~ DaysSinceStart_scaled + I(DaysSinceStart_scaled**2) + I(DaysSinceStart_scaled**3) + TotalDocuments"
         model = smf.glm(formula=formula, data=self.data, family=self.base_family)
         self.poly3_results = model.fit()
         return self.poly3_results
 
     def fit_spline_model(self, df=5):
-        """
-        Fit cubic spline model.
+        """Fit cubic spline model.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         df : int
             Degrees of freedom for the spline
+
         """
-        formula = f"ObservedEntities ~ cr(Year_scaled, df={df}) + TotalDocuments"
+        # Change from Year_scaled to DaysSinceStart_scaled
+        formula = (
+            f"ObservedEntities ~ cr(DaysSinceStart_scaled, df={df}) + TotalDocuments"
+        )
         model = smf.glm(formula=formula, data=self.data, family=self.base_family)
         self.spline_results = model.fit()
         return self.spline_results
 
-    def fit_all_models(self, spline_df=5):
+    def fit_all_models(self, spline_df: int = 5) -> None:
         """Fit all trend models."""
         self.fit_linear_model()
         self.fit_quadratic_model()
@@ -84,13 +90,13 @@ class TrendModelFitter:
         self.fit_spline_model(spline_df)
 
     def compare_polynomial_models(self):
-        """
-        Compare polynomial models and choose the best one.
+        """Compare polynomial models and choose the best one.
 
-        Returns:
-        --------
+        Returns
+        -------
         dict
             Comparison results and best polynomial model
+
         """
         models = {
             "linear": self.linear_results,
@@ -116,13 +122,13 @@ class TrendModelFitter:
         return comparison
 
     def compare_all_models(self):
-        """
-        Compare all models including spline and choose the overall best.
+        """Compare all models including spline and choose the overall best.
 
-        Returns:
-        --------
+        Returns
+        -------
         dict
             Complete comparison results
+
         """
         poly_comparison = self.compare_polynomial_models()
         best_poly = poly_comparison["best_polynomial_model"]
@@ -148,30 +154,30 @@ class TrendModelFitter:
 
         return comparison
 
-    def print_results(self):
+    def print_results(self) -> None:
         """Print comprehensive results of trend modeling."""
         if self.linear_results:
             print("\n--- Linear Trend Model Results ---")
             print(
-                f"AIC: {self.linear_results.aic:.2f}, BIC: {self.linear_results.bic:.2f}"
+                f"AIC: {self.linear_results.aic:.2f}, BIC: {self.linear_results.bic:.2f}",
             )
 
         if self.poly2_results:
             print("\n--- Quadratic Trend Model Results ---")
             print(
-                f"AIC: {self.poly2_results.aic:.2f}, BIC: {self.poly2_results.bic:.2f}"
+                f"AIC: {self.poly2_results.aic:.2f}, BIC: {self.poly2_results.bic:.2f}",
             )
 
         if self.poly3_results:
             print("\n--- Cubic Trend Model Results ---")
             print(
-                f"AIC: {self.poly3_results.aic:.2f}, BIC: {self.poly3_results.bic:.2f}"
+                f"AIC: {self.poly3_results.aic:.2f}, BIC: {self.poly3_results.bic:.2f}",
             )
 
         if self.spline_results:
             print("\n--- Spline Model Results ---")
             print(
-                f"AIC: {self.spline_results.aic:.2f}, BIC: {self.spline_results.bic:.2f}"
+                f"AIC: {self.spline_results.aic:.2f}, BIC: {self.spline_results.bic:.2f}",
             )
 
         # Print comparison
@@ -180,18 +186,20 @@ class TrendModelFitter:
         print(f"Best model formula: {comparison['best_model'].model.formula}")
 
     def plot_enhanced_trends_with_documents(
-        self, save_path=None, normalize_visualization=True
+        self,
+        save_path=None,
+        normalize_visualization=True,
     ):
-        """
-        Create enhanced trend plots with document histograms and optional post-fitting normalization.
+        """Create enhanced trend plots with document histograms and optional post-fitting normalization.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         save_path : str, optional
             Path to save the plot
         normalize_visualization : bool, default True
             If True, normalize fitted values and observed data for visualization only
             (model fitting still uses absolute counts)
+
         """
         if self.best_model is None:
             self.compare_all_models()
@@ -316,7 +324,8 @@ class TrendModelFitter:
         ax3.set_xlabel("Year", fontsize=12)
         ax3.set_ylabel("Standardized Residuals", fontsize=12)
         ax3.set_title(
-            "Model Residuals (Always Based on Absolute Counts)", fontweight="bold"
+            "Model Residuals (Always Based on Absolute Counts)",
+            fontweight="bold",
         )
         ax3.grid(True, alpha=0.3)
 
@@ -395,7 +404,7 @@ if __name__ == "__main__":
     # Load data
     try:
         data = load_data(
-            "/home/callebalik/EnviDis/data/processed/sample_time_series_data.csv"
+            "/home/callebalik/EnviDis/data/processed/sample_time_series_data.csv",
         )
 
         # Fit trend models
