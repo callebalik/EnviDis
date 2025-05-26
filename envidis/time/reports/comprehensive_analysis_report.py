@@ -24,10 +24,12 @@ from statsmodels.stats.stattools import durbin_watson
 sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
 
 # Import necessary modules
-from data_generation import generate_sample_data
-from basic_model_fitting import BasicModelFitter
+from envidis.time.demo.data_generation import generate_sample_data
+from envidis.time.analysis.basic_model_fitting import BasicModelFitter
 from trend_modeling import TrendModelFitter
-from autocorrelation_analysis import AutocorrelationAnalyzer
+from envidis.time.analysis.autocorrelation_analysis import (
+    AutocorrelationAnalyzer,
+)
 
 
 class ComprehensiveAnalysisReport:
@@ -1133,7 +1135,7 @@ Best Model Selection:
         )
 
         # Display the plot
-        plt.show()
+        # plt.show()
 
         return {
             "figure": fig,

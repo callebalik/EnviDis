@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""
-Test script for comprehensive analysis
-"""
+"""Test script for comprehensive analysis."""
 
 import sys
-sys.path.append('/home/callebalik/EnviDis/scripts/analysis')
+
+sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
 
 print("Testing comprehensive analysis...")
 
 try:
     print("1. Importing modules...")
-    from data_generation import generate_sample_data
-    from comprehensive_analysis_report import ComprehensiveAnalysisReport
+    from envidis.time.demo.data_generation import generate_sample_data
+    from envidis.time.reports.comprehensive_analysis_report import (
+        ComprehensiveAnalysisReport,
+    )
+
     print("   ✓ Imports successful")
 
     print("2. Generating sample data...")
@@ -36,4 +38,5 @@ try:
 except Exception as e:
     print(f"ERROR: {e}")
     import traceback
+
     traceback.print_exc()

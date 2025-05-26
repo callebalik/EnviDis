@@ -1,33 +1,40 @@
-"""
-Main Analysis Pipeline Script
+"""Main Analysis Pipeline Script
 This script orchestrates the complete time series analysis pipeline.
 """
 
-import pandas as pd
 import os
-from data_generation import generate_sample_data, save_sample_data
-from data_visualization import create_all_plots
-from basic_model_fitting import BasicModelFitter
-from trend_modeling import TrendModelFitter
-from autocorrelation_analysis import AutocorrelationAnalyzer, LaggedModelFitter
+
+import pandas as pd
+
+from envidis.time.analysis.autocorrelation_analysis import (
+    AutocorrelationAnalyzer,
+    LaggedModelFitter,
+)
+from envidis.time.analysis.basic_model_fitting import BasicModelFitter
+from envidis.time.analysis.trend_modeling import TrendModelFitter
+from envidis.time.demo.data_generation import (
+    generate_sample_data,
+    save_sample_data,
+)
+from envidis.time.plots.data_visualization import create_all_plots
 
 
 class TimeSeriesAnalysisPipeline:
     """Complete time series analysis pipeline."""
 
     def __init__(self, data_path=None, output_dir=None):
-        """
-        Initialize the analysis pipeline.
+        """Initialize the analysis pipeline.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         data_path : str, optional
             Path to existing data file. If None, generates sample data.
         output_dir : str, optional
             Directory for saving outputs
+
         """
         self.data_path = data_path
-        self.output_dir = output_dir or '/home/callebalik/EnviDis/results/analysis'
+        self.output_dir = output_dir or "/home/callebalik/EnviDis/results/analysis"
         self.data = None
         self.basic_fitter = None
         self.trend_fitter = None
@@ -37,11 +44,11 @@ class TimeSeriesAnalysisPipeline:
         os.makedirs(self.output_dir, exist_ok=True)
         os.makedirs(f"{self.output_dir}/plots", exist_ok=True)
 
-    def load_or_generate_data(self):
+    def load_or_generate_data(self) -> None:
         """Load existing data or generate sample data."""
         if self.data_path and os.path.exists(self.data_path):
             print(f"Loading data from {self.data_path}")
-            self.data = pd.read_csv(self.data_path, index_col='Year')
+            self.data = pd.read_csv(self.data_path, index_col="Year")
         else:
             print("Generating sample data...")
             self.data = generate_sample_data()
@@ -55,12 +62,12 @@ class TimeSeriesAnalysisPipeline:
         print(self.data.head())
         print(f"Shape: {self.data.shape}")
 
-    def create_visualizations(self):
+    def create_visualizations(self) -> None:
         """Create all visualization plots."""
         print("\nCreating visualizations...")
         create_all_plots(self.data, f"{self.output_dir}/plots")
 
-    def fit_basic_models(self):
+    def fit_basic_models(self) -> None:
         """Fit basic Poisson and Negative Binomial models."""
         print("\nFitting basic models...")
         self.basic_fitter = BasicModelFitter(self.data)
@@ -68,7 +75,7 @@ class TimeSeriesAnalysisPipeline:
         self.basic_fitter.fit_negative_binomial_model()
         self.basic_fitter.print_results()
 
-    def fit_trend_models(self):
+    def fit_trend_models(self) -> None:
         """Fit non-monotonic trend models."""
         print("\nFitting trend models...")
         self.trend_fitter = TrendModelFitter(self.data)
@@ -77,13 +84,14 @@ class TimeSeriesAnalysisPipeline:
 
         # Get best model
         comparison = self.trend_fitter.compare_all_models()
-        self.best_model = comparison['best_model']
+        self.best_model = comparison["best_model"]
         print(f"\nBest model selected: {comparison['best_overall']}")
 
     def analyze_autocorrelation(self):
         """Analyze autocorrelation in residuals."""
         if self.best_model is None:
-            raise ValueError("Must fit trend models first")
+            msg = "Must fit trend models first"
+            raise ValueError(msg)
 
         print("\nAnalyzing autocorrelation...")
         analyzer = AutocorrelationAnalyzer(self.best_model)
@@ -95,9 +103,9 @@ class TimeSeriesAnalysisPipeline:
         dw_results = analyzer.durbin_watson_test()
         analyzer.print_diagnostics()
 
-        return dw_results['significant_autocorrelation']
+        return dw_results["significant_autocorrelation"]
 
-    def fit_lagged_model(self):
+    def fit_lagged_model(self) -> None:
         """Fit model with lagged dependent variables if needed."""
         has_autocorrelation = self.analyze_autocorrelation()
 
@@ -110,21 +118,21 @@ class TimeSeriesAnalysisPipeline:
             # Create lagged model plots
             print("Creating lagged model plots...")
             lagged_fitter.plot_lagged_model_fit(
-                save_path=f"{self.output_dir}/plots/lagged_model_fit.png"
+                save_path=f"{self.output_dir}/plots/lagged_model_fit.png",
             )
             lagged_fitter.compare_models_plot(
-                save_path=f"{self.output_dir}/plots/model_comparison.png"
+                save_path=f"{self.output_dir}/plots/model_comparison.png",
             )
 
             # Analyze lagged model residuals
             print("Analyzing lagged model residuals...")
             lagged_fitter.analyze_lagged_residuals(
-                save_path=f"{self.output_dir}/plots/acf_lagged_residuals.png"
+                save_path=f"{self.output_dir}/plots/acf_lagged_residuals.png",
             )
         else:
             print("No significant autocorrelation detected. Lagged model not needed.")
 
-    def run_complete_analysis(self):
+    def run_complete_analysis(self) -> None:
         """Run the complete analysis pipeline."""
         print("=" * 60)
         print("STARTING COMPLETE TIME SERIES ANALYSIS PIPELINE")
@@ -155,16 +163,18 @@ class TimeSeriesAnalysisPipeline:
             print(f"\nError in analysis pipeline: {e}")
             raise
 
-    def save_summary_report(self):
+    def save_summary_report(self) -> None:
         """Save a summary report of the analysis."""
         report_path = f"{self.output_dir}/analysis_summary.txt"
 
-        with open(report_path, 'w') as f:
+        with open(report_path, "w") as f:
             f.write("TIME SERIES ANALYSIS SUMMARY REPORT\n")
             f.write("=" * 50 + "\n\n")
 
             f.write(f"Data shape: {self.data.shape}\n")
-            f.write(f"Year range: {self.data.index.min()} - {self.data.index.max()}\n\n")
+            f.write(
+                f"Year range: {self.data.index.min()} - {self.data.index.max()}\n\n",
+            )
 
             if self.basic_fitter:
                 comparison = self.basic_fitter.compare_models()
@@ -175,7 +185,9 @@ class TimeSeriesAnalysisPipeline:
             if self.trend_fitter:
                 trend_comparison = self.trend_fitter.compare_all_models()
                 f.write(f"Best trend model: {trend_comparison['best_overall']}\n")
-                f.write(f"Best model formula: {trend_comparison['best_model'].model.formula}\n\n")
+                f.write(
+                    f"Best model formula: {trend_comparison['best_model'].model.formula}\n\n",
+                )
 
             if self.best_model:
                 analyzer = AutocorrelationAnalyzer(self.best_model)
@@ -186,11 +198,11 @@ class TimeSeriesAnalysisPipeline:
         print(f"Summary report saved to: {report_path}")
 
 
-def main():
+def main() -> None:
     """Main function to run the analysis."""
     # Option 1: Use existing data
     # pipeline = TimeSeriesAnalysisPipeline(
-    #     data_path='/path/to/your/data.csv'
+    #     data_path="data/raw/time-series/time_series.csv",
     # )
 
     # Option 2: Generate sample data (default)

@@ -6,7 +6,8 @@ This script demonstrates how to use each modular component individually.
 import sys
 
 # Add the analysis directory to Python path
-sys.path.append('/home/callebalik/EnviDis/scripts/analysis')
+sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
+
 
 def demo_data_generation():
     """Demonstrate data generation functionality."""
@@ -14,7 +15,7 @@ def demo_data_generation():
     print("DEMO: Data Generation")
     print("=" * 50)
 
-    from data_generation import generate_sample_data
+    from envidis.time.demo.data_generation import generate_sample_data
 
     # Generate custom data
     data = generate_sample_data(start_year=2010, end_year=2020, seed=999)
@@ -25,13 +26,14 @@ def demo_data_generation():
 
     return data
 
+
 def demo_basic_modeling(data):
     """Demonstrate basic model fitting."""
     print("\n" + "=" * 50)
     print("DEMO: Basic Model Fitting")
     print("=" * 50)
 
-    from basic_model_fitting import BasicModelFitter
+    from envidis.time.analysis.basic_model_fitting import BasicModelFitter
 
     fitter = BasicModelFitter(data)
 
@@ -51,6 +53,7 @@ def demo_basic_modeling(data):
     print(f"Best model: {comparison['chosen_model']}")
 
     return fitter.chosen_model
+
 
 def demo_trend_modeling(data):
     """Demonstrate trend modeling."""
@@ -75,7 +78,8 @@ def demo_trend_modeling(data):
     comparison = trend_fitter.compare_all_models()
     print(f"Best trend model: {comparison['best_overall']}")
 
-    return comparison['best_model']
+    return comparison["best_model"]
+
 
 def demo_autocorrelation_analysis(best_model, data):
     """Demonstrate autocorrelation analysis."""
@@ -83,7 +87,10 @@ def demo_autocorrelation_analysis(best_model, data):
     print("DEMO: Autocorrelation Analysis")
     print("=" * 50)
 
-    from autocorrelation_analysis import AutocorrelationAnalyzer, LaggedModelFitter
+    from envidis.time.analysis.autocorrelation_analysis import (
+        AutocorrelationAnalyzer,
+        LaggedModelFitter,
+    )
 
     # Analyze autocorrelation
     analyzer = AutocorrelationAnalyzer(best_model)
@@ -93,7 +100,7 @@ def demo_autocorrelation_analysis(best_model, data):
     print(f"Interpretation: {dw_results['interpretation']}")
 
     # If autocorrelation detected, fit lagged model
-    if dw_results['significant_autocorrelation']:
+    if dw_results["significant_autocorrelation"]:
         print("\nFitting lagged model...")
         lagged_fitter = LaggedModelFitter(data, best_model)
         lagged_results = lagged_fitter.fit_lagged_model()
@@ -101,6 +108,7 @@ def demo_autocorrelation_analysis(best_model, data):
         # Check if autocorrelation was resolved
         lagged_analyzer = lagged_fitter.analyze_lagged_residuals()
         print("Lagged model fitted successfully!")
+
 
 def demo_custom_analysis():
     """Demonstrate custom analysis workflow."""
@@ -123,6 +131,7 @@ def demo_custom_analysis():
     print("\n" + "=" * 50)
     print("DEMO COMPLETED SUCCESSFULLY!")
     print("=" * 50)
+
 
 if __name__ == "__main__":
     demo_custom_analysis()

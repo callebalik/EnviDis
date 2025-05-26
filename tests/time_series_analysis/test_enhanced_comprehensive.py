@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""
-Test script for the enhanced comprehensive analysis report with real data.
-"""
+"""Test script for the enhanced comprehensive analysis report with real data."""
 
-import sys
 import os
+import sys
 
 # Add paths
 sys.path.append("/home/callebalik/EnviDis/scripts/time_series_analysis")
 sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
 
-from comprehensive_analysis_report import ComprehensiveAnalysisReport, main_real_data
+from envidis.time.reports.comprehensive_analysis_report import (
+    ComprehensiveAnalysisReport,
+    main_real_data,
+)
 
 
 def test_synthetic_data():
