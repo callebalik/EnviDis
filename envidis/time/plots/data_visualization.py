@@ -8,6 +8,20 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+# X-axis time scale resolution constants
+DAILY_DATA_THRESHOLD = (
+    1000  # Threshold for considering data as "daily" (high frequency)
+)
+DAILY_SAMPLING_INTERVAL = 30  # Sample every N points for daily data readability
+MONTHLY_AGGREGATION_THRESHOLD = 1000  # Threshold for aggregating daily to monthly
+MAX_XTICKS_DISPLAY = 20  # Maximum number of x-axis ticks to display
+XTICK_STEP_DIVISOR = 10  # Divisor to calculate x-tick step size
+
+# Datetime x-axis formatting constants
+YEAR_LABEL_INTERVAL = 5  # Interval in years between x-axis labels for datetime data
+DATE_FORMAT = "%Y"  # Date format for x-axis labels
+ENABLE_YEAR_LOCATOR = True  # Whether to use YearLocator for datetime x-axis
+
 
 def plot_entities_over_time(data, save_path=None) -> None:
     """Plot observed entities over time.
@@ -23,8 +37,8 @@ def plot_entities_over_time(data, save_path=None) -> None:
     plt.figure(figsize=(12, 6))
 
     # For daily data, sample for readability
-    if len(data) > 1000:
-        sample_data = data.iloc[::30]  # Sample every 30 points
+    if len(data) > DAILY_DATA_THRESHOLD:
+        sample_data = data.iloc[::DAILY_SAMPLING_INTERVAL]  # Sample every N points
         sns.lineplot(
             x=sample_data.index,
             y="co_count",
@@ -39,8 +53,9 @@ def plot_entities_over_time(data, save_path=None) -> None:
     # Handle datetime vs numeric index
     if hasattr(data.index, "year"):
         plt.xlabel("Date")
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-        plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+        if ENABLE_YEAR_LOCATOR:
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
+            plt.gca().xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
         plt.xticks(rotation=45)
     else:
         plt.xlabel("Time Period")
@@ -65,7 +80,7 @@ def plot_entities_with_documents_histogram(data, save_path=None) -> None:
 
     """
     # For daily data, aggregate to monthly for better visualization
-    if len(data) > 1000 and hasattr(data.index, "year"):
+    if len(data) > MONTHLY_AGGREGATION_THRESHOLD and hasattr(data.index, "year"):
         plot_data = data.resample("M").sum()
         title_suffix = " (Monthly Aggregated)"
     else:
@@ -107,17 +122,18 @@ def plot_entities_with_documents_histogram(data, save_path=None) -> None:
 
     # Handle datetime formatting
     if hasattr(plot_data.index, "year"):
-        ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-        ax1.xaxis.set_major_locator(mdates.YearLocator())
-        ax2.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-        ax2.xaxis.set_major_locator(mdates.YearLocator())
+        if ENABLE_YEAR_LOCATOR:
+            ax1.xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
+            ax1.xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
+            ax2.xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
+            ax2.xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
         ax1.tick_params(axis="x", rotation=45)
         ax2.tick_params(axis="x", rotation=45)
         ax2.set_xlabel("Date", fontsize=12)
     else:
         # Format x-axis to show fewer ticks if too many points
-        if len(plot_data.index) > 20:
-            step = max(1, len(plot_data.index) // 10)
+        if len(plot_data.index) > MAX_XTICKS_DISPLAY:
+            step = max(1, len(plot_data.index) // XTICK_STEP_DIVISOR)
             ax1.set_xticks(plot_data.index[::step])
             ax2.set_xticks(plot_data.index[::step])
             ax1.tick_params(axis="x", rotation=45)
@@ -143,7 +159,7 @@ def plot_entities_normalized_and_absolute(data, save_path=None):
 
     """
     # For daily data, aggregate to monthly for better visualization
-    if len(data) > 1000 and hasattr(data.index, "year"):
+    if len(data) > MONTHLY_AGGREGATION_THRESHOLD and hasattr(data.index, "year"):
         plot_data = data.resample("M").sum()
         title_suffix = " (Monthly Aggregated)"
     else:
@@ -220,17 +236,18 @@ def plot_entities_normalized_and_absolute(data, save_path=None):
 
     # Handle datetime formatting
     if hasattr(plot_data.index, "year"):
-        ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-        ax1.xaxis.set_major_locator(mdates.YearLocator())
-        ax2.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-        ax2.xaxis.set_major_locator(mdates.YearLocator())
+        if ENABLE_YEAR_LOCATOR:
+            ax1.xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
+            ax1.xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
+            ax2.xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
+            ax2.xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
         ax1.tick_params(axis="x", rotation=45)
         ax2.tick_params(axis="x", rotation=45)
         ax2.set_xlabel("Date", fontsize=12)
     else:
         # Format x-axis
-        if len(plot_data.index) > 20:
-            step = max(1, len(plot_data.index) // 10)
+        if len(plot_data.index) > MAX_XTICKS_DISPLAY:
+            step = max(1, len(plot_data.index) // XTICK_STEP_DIVISOR)
             ax1.set_xticks(plot_data.index[::step])
             ax2.set_xticks(plot_data.index[::step])
             ax1.tick_params(axis="x", rotation=45)
@@ -260,8 +277,8 @@ def plot_documents_over_time(data: pd.DataFrame, save_path: str | None = None) -
     plt.figure(figsize=(12, 6))
 
     # For daily data, sample for readability
-    if len(data) > 1000:
-        sample_data = data.iloc[::30]
+    if len(data) > DAILY_DATA_THRESHOLD:
+        sample_data = data.iloc[::DAILY_SAMPLING_INTERVAL]
         sns.lineplot(
             x=sample_data.index,
             y="document_count",
@@ -283,8 +300,9 @@ def plot_documents_over_time(data: pd.DataFrame, save_path: str | None = None) -
     # Handle datetime vs numeric index
     if hasattr(data.index, "year"):
         plt.xlabel("Date")
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-        plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+        if ENABLE_YEAR_LOCATOR:
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter(DATE_FORMAT))
+            plt.gca().xaxis.set_major_locator(mdates.YearLocator(YEAR_LABEL_INTERVAL))
         plt.xticks(rotation=45)
     else:
         plt.xlabel("Time Period")
@@ -338,7 +356,7 @@ def plot_entities_vs_documents(
     plt.grid(True)
 
     # Add a custom colorbar instead of legend for large datasets
-    if len(data) > 100:  # For large datasets, use colorbar
+    if len(data) > DAILY_DATA_THRESHOLD // 10:  # For large datasets, use colorbar
         # Create colorbar with numeric values
         norm = plt.Normalize(vmin=hue_values.min(), vmax=hue_values.max())
         sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
