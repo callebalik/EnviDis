@@ -1,0 +1,81 @@
+{
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "data/**.json": true,
+        "supplementary/experiment_scripts/*.ipynb": true
+    },
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/.hg/store/**": true,
+        ".mypy_cache/**": true,
+        "**/__pycache__/**": true,
+        "supplementary/**": true,
+        "data/Simplified Lund COVID19 corpus.zip": true
+    },
+    "files.exclude": {
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        ".mypy_cache": true,
+        ".pytest_cache": true
+    },
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "python.analysis.diagnosticMode": "workspace",
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.analysis.typeCheckingMode": "standard",
+    "python.analysis.exclude": [
+        "**/temp",
+        "**/supplementary/experiment_scripts",
+        "**/easyner_env/**",
+        "**/site-packages/**/*.py",
+        "**/.conda",
+        "**/anaconda3/**",
+        "**/transformers/**",
+    ],
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportRedeclaration": false, // Ruff already does this faster
+    },
+    "mypy.enabled": true,
+    "mypy.runUsingActiveInterpreter": true,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.wordBasedSuggestions": "matchingDocuments",
+        "editor.codeActionsOnSave": {
+            "source.fixAll.pylance": "always",
+            "source.convertImportFormat": "always",
+            "source.organizeImports.ruff": "always",
+            "source.fixAll.ruff": "always"
+        }
+    },
+    "flake8.enabled": false,
+    "flake8.ignorePatterns": [
+        "**/site-packages/**/*.py",
+        ".vscode/*.py",
+        "**/.conda",
+        "**supplementary/experiment_scripts",
+        "**/temp"
+    ],
+    "ruff.enable": true,
+    "ruff.configurationPreference": "filesystemFirst",
+    "ruff.codeAction.fixViolation": {
+        "enable": true
+    },
+    "ruff.fixAll": true,
+    "ruff.organizeImports": true,
+    "black-formatter.importStrategy": "fromEnvironment",
+    "black-formatter.args": [
+        "--config",
+        "${workspaceFolder}/pyproject.toml"
+    ],
+    "python.terminal.activateEnvironment": false, // On distributed system where anaconda module has to be loaded this should be set to false as it will otherwise cause failures or inconsistencises as vscode tries to contribute the env before conda is activated. Which can lead to conda version problems.
+    "notebook.diff.ignoreMetadata": true, // Note that this is ust a IDE setting. It does not affect version control.
+    "notebook.diff.ignoreOutputs": true, // Note that this is ust a IDE setting. It does not affect version control.
+}
