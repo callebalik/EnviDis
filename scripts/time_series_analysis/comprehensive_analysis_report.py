@@ -1123,8 +1123,8 @@ if __name__ == "__main__":
     import sys
 
     # Check command line arguments
-    if len(sys.argv) > 1 and sys.argv[1] == "--real":
+    if len(sys.argv) > 1 and sys.argv[1] == "--demo":
+        results = main()
+    else:
         data_path = sys.argv[2] if len(sys.argv) > 2 else None
         results = main_real_data(data_path)
-    else:
-        results = main()
