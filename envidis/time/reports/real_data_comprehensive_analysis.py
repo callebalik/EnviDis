@@ -1,42 +1,31 @@
 #!/usr/bin/env python3
-"""
-Real Data Comprehensive Analysis Report Generator
+"""Real Data Comprehensive Analysis Report Generator.
+
 This script creates a complete analysis for real time series data with date-level resolution.
 Adapted for co-occurrence data from 1794-2025.
 """
 
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import sys
-import os
-from scipy import stats
-from datetime import datetime
-import warnings
-
-warnings.filterwarnings("ignore")
-
-import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from statsmodels.stats.stattools import durbin_watson
-from statsmodels.graphics.tsaplots import plot_acf
-from statsmodels.tsa.stattools import acf
 
 
 class RealDataAnalysisReport:
     """Generate comprehensive analysis report for real date-level time series data."""
 
     def __init__(self, data_path=None, output_dir=None):
-        """
-        Initialize the real data analysis report.
+        """Initialize the real data analysis report.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         data_path : str
             Path to the CSV file with real data
         output_dir : str, optional
             Directory to save outputs
+
         """
         self.output_dir = output_dir or "/home/callebalik/EnviDis/results/analysis"
         os.makedirs(self.output_dir, exist_ok=True)
@@ -92,12 +81,12 @@ class RealDataAnalysisReport:
         print(f"Prepared data shape: {df.shape}")
         print(f"Date range: {df.index.min()} to {df.index.max()}")
         print(
-            f"ObservedEntities (co_count) range: {df['ObservedEntities'].min()} to {df['ObservedEntities'].max()}"
+            f"ObservedEntities (co_count) range: {df['ObservedEntities'].min()} to {df['ObservedEntities'].max()}",
         )
 
         return df
 
-    def run_all_analyses(self):
+    def run_all_analyses(self) -> None:
         """Run all statistical analyses."""
         print("Running comprehensive statistical analysis on real data...")
 
@@ -110,7 +99,7 @@ class RealDataAnalysisReport:
         print("3. Analyzing temporal patterns...")
         self.analyze_temporal_patterns()
 
-    def fit_basic_models(self):
+    def fit_basic_models(self) -> None:
         """Fit basic count models (Poisson and Negative Binomial)."""
         # Filter out extremely high values that might cause convergence issues
         modeling_data = self.data[
@@ -138,12 +127,12 @@ class RealDataAnalysisReport:
             ).fit(disp=0)
 
             print(
-                f"   ✓ Basic models fitted on {len(modeling_data)} observations (using document count as offset)"
+                f"   ✓ Basic models fitted on {len(modeling_data)} observations (using document count as offset)",
             )
         except Exception as e:
             print(f"   ⚠ Basic model fitting encountered issues: {e}")
 
-    def fit_trend_models(self):
+    def fit_trend_models(self) -> None:
         """Fit polynomial trend models."""
         # Use a sample for complex models to ensure computational feasibility
         sample_size = min(5000, len(self.data))
@@ -184,23 +173,23 @@ class RealDataAnalysisReport:
             ).fit(disp=0)
 
             print(
-                f"   ✓ Trend models fitted on {len(modeling_data)} observations (using document count as offset)"
+                f"   ✓ Trend models fitted on {len(modeling_data)} observations (using document count as offset)",
             )
         except Exception as e:
             print(f"   ⚠ Trend model fitting encountered issues: {e}")
 
-    def analyze_temporal_patterns(self):
+    def analyze_temporal_patterns(self) -> None:
         """Analyze temporal patterns and seasonality."""
         # Monthly aggregation for pattern analysis
         monthly_data = self.data.groupby(
-            [self.data.index.year, self.data.index.month]
+            [self.data.index.year, self.data.index.month],
         ).agg({"ObservedEntities": "sum", "TotalDocuments": "sum"})
         monthly_data.index.names = ["Year", "Month"]
         monthly_data = monthly_data.reset_index()
 
         # Yearly aggregation
         yearly_data = self.data.groupby(self.data.index.year).agg(
-            {"ObservedEntities": "sum", "TotalDocuments": "sum"}
+            {"ObservedEntities": "sum", "TotalDocuments": "sum"},
         )
         yearly_data.index.name = "Year"
         yearly_data = yearly_data.reset_index(drop=False)
@@ -209,7 +198,7 @@ class RealDataAnalysisReport:
         self.yearly_data = yearly_data
 
         print(
-            f"   ✓ Temporal patterns analyzed ({len(yearly_data)} years, {len(monthly_data)} months)"
+            f"   ✓ Temporal patterns analyzed ({len(yearly_data)} years, {len(monthly_data)} months)",
         )
 
     def create_model_summary_table(self):
@@ -235,7 +224,7 @@ class RealDataAnalysisReport:
                         ),
                         "N Observations": f"{model.nobs:.0f}",
                         "Converged": "Yes" if model.mle_retvals["converged"] else "No",
-                    }
+                    },
                 )
 
         return pd.DataFrame(summary_data)
@@ -318,7 +307,9 @@ class RealDataAnalysisReport:
                 markersize=3,
             )
             ax2.set_title(
-                "B. Annual Co-occurrence Totals", fontsize=12, fontweight="bold"
+                "B. Annual Co-occurrence Totals",
+                fontsize=12,
+                fontweight="bold",
             )
             ax2.set_ylabel("Annual Total")
 
@@ -343,10 +334,15 @@ class RealDataAnalysisReport:
                 "ObservedEntities"
             ].mean()
             ax4.bar(
-                monthly_means.index, monthly_means.values, color="purple", alpha=0.7
+                monthly_means.index,
+                monthly_means.values,
+                color="purple",
+                alpha=0.7,
             )
             ax4.set_title(
-                "D. Monthly Pattern (2020-2025)", fontsize=12, fontweight="bold"
+                "D. Monthly Pattern (2020-2025)",
+                fontsize=12,
+                fontweight="bold",
             )
             ax4.set_xlabel("Month")
             ax4.set_ylabel("Average Count")
@@ -374,7 +370,7 @@ class RealDataAnalysisReport:
             table_data = []
             for _, row in model_summary.iterrows():
                 table_data.append(
-                    [row["Model"], row["AIC"], row["Pseudo R²"], row["N Observations"]]
+                    [row["Model"], row["AIC"], row["Pseudo R²"], row["N Observations"]],
                 )
 
             table = ax6.table(
@@ -451,7 +447,7 @@ class RealDataAnalysisReport:
                             row["Coefficient"],
                             row["P-value"],
                             row["Significant"],
-                        ]
+                        ],
                     )
 
                 table = ax10.table(
@@ -550,15 +546,15 @@ class RealDataAnalysisReport:
         summary.append("-" * 40)
         summary.append(f"• Total observations: {len(self.data):,}")
         summary.append(
-            f"• Date range: {self.data.index.min().date()} to {self.data.index.max().date()}"
+            f"• Date range: {self.data.index.min().date()} to {self.data.index.max().date()}",
         )
         summary.append(f"• Years covered: {self.data.index.year.nunique()}")
-        summary.append(f"• Co-occurrence statistics:")
+        summary.append("• Co-occurrence statistics:")
         summary.append(f"  - Mean: {self.data['ObservedEntities'].mean():.2f}")
         summary.append(f"  - Median: {self.data['ObservedEntities'].median():.2f}")
         summary.append(f"  - Max: {self.data['ObservedEntities'].max():,}")
         summary.append(
-            f"  - Zero values: {(self.data['ObservedEntities'] == 0).sum():,} ({(self.data['ObservedEntities'] == 0).mean()*100:.1f}%)"
+            f"  - Zero values: {(self.data['ObservedEntities'] == 0).sum():,} ({(self.data['ObservedEntities'] == 0).mean()*100:.1f}%)",
         )
         summary.append("")
 
@@ -574,12 +570,12 @@ class RealDataAnalysisReport:
                 best_model = model_summary.iloc[best_model_idx]
 
                 summary.append(
-                    f"• Best model: {best_model['Model']} (AIC: {best_model['AIC']})"
+                    f"• Best model: {best_model['Model']} (AIC: {best_model['AIC']})",
                 )
-                summary.append(f"• Model performance:")
+                summary.append("• Model performance:")
                 for _, row in model_summary.iterrows():
                     summary.append(
-                        f"  - {row['Model']}: AIC={row['AIC']}, R²={row['Pseudo R²']}"
+                        f"  - {row['Model']}: AIC={row['AIC']}, R²={row['Pseudo R²']}",
                     )
                 summary.append("")
 
@@ -604,7 +600,7 @@ class RealDataAnalysisReport:
                             else "decreasing"
                         )
                         summary.append(
-                            f"  - {row['Parameter']}: {direction} trend ({row['Significant']})"
+                            f"  - {row['Parameter']}: {direction} trend ({row['Significant']})",
                         )
                 summary.append("")
 
@@ -620,7 +616,7 @@ class RealDataAnalysisReport:
 
         if missing_years:
             summary.append(
-                f"• Missing years: {len(missing_years)} ({missing_years[:5]}{'...' if len(missing_years) > 5 else ''})"
+                f"• Missing years: {len(missing_years)} ({missing_years[:5]}{'...' if len(missing_years) > 5 else ''})",
             )
         else:
             summary.append("• ✓ Complete year coverage")
@@ -629,23 +625,25 @@ class RealDataAnalysisReport:
         recent_data = self.data[self.data.index.year >= 2020]
         summary.append(f"• Recent data (2020+): {len(recent_data):,} observations")
         summary.append(
-            f"• Zero-inflation level: {(self.data['ObservedEntities'] == 0).mean()*100:.1f}%"
+            f"• Zero-inflation level: {(self.data['ObservedEntities'] == 0).mean()*100:.1f}%",
         )
 
         return "\n".join(summary)
 
-    def save_results(self):
+    def save_results(self) -> None:
         """Save all analysis results to files."""
         # Save model summary
         model_summary = self.create_model_summary_table()
         model_summary.to_csv(
-            f"{self.output_dir}/real_data_report/model_summary.csv", index=False
+            f"{self.output_dir}/real_data_report/model_summary.csv",
+            index=False,
         )
 
         # Save coefficients table
         coef_table = self.create_coefficients_table()
         coef_table.to_csv(
-            f"{self.output_dir}/real_data_report/coefficients_table.csv", index=False
+            f"{self.output_dir}/real_data_report/coefficients_table.csv",
+            index=False,
         )
 
         # Save text summary
@@ -665,20 +663,21 @@ class RealDataAnalysisReport:
         }
 
         pd.DataFrame([data_summary]).to_csv(
-            f"{self.output_dir}/real_data_report/data_summary.csv", index=False
+            f"{self.output_dir}/real_data_report/data_summary.csv",
+            index=False,
         )
 
         print("\nAdditional files saved:")
         print(f"- Model summary: {self.output_dir}/real_data_report/model_summary.csv")
         print(
-            f"- Coefficients: {self.output_dir}/real_data_report/coefficients_table.csv"
+            f"- Coefficients: {self.output_dir}/real_data_report/coefficients_table.csv",
         )
         print(
-            f"- Text summary: {self.output_dir}/real_data_report/analysis_summary.txt"
+            f"- Text summary: {self.output_dir}/real_data_report/analysis_summary.txt",
         )
         print(f"- Data summary: {self.output_dir}/real_data_report/data_summary.csv")
 
-    def run_complete_analysis(self):
+    def run_complete_analysis(self) -> None:
         """Run the complete analysis pipeline."""
         print("=" * 80)
         print("REAL DATA COMPREHENSIVE TIME SERIES ANALYSIS")
@@ -701,7 +700,7 @@ class RealDataAnalysisReport:
         print("=" * 80)
 
 
-def main():
+def main() -> None:
     """Main function to run the real data analysis."""
     # Create analyzer
     analyzer = RealDataAnalysisReport()

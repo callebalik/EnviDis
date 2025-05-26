@@ -1,46 +1,40 @@
 #!/usr/bin/env python3
-"""
-Comprehensive Analysis Report Generator
+"""Comprehensive Analysis Report Generator.
+
 This script creates a complete one-page analysis with all relevant plots,
 tables of confidence intervals, coefficients, and model summaries.
 Now supports both synthetic and real date-based time series data.
 """
 
+import os
+import sys
+from datetime import datetime
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import sys
-import os
 from scipy import stats
-from datetime import datetime
-import warnings
-
-warnings.filterwarnings("ignore")
-
-from statsmodels.graphics.tsaplots import plot_acf
-from statsmodels.stats.stattools import durbin_watson
-
-# Add the analysis directory to Python path
-sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
 
 # Import necessary modules
-from envidis.time.demo.data_generation import generate_sample_data
-from envidis.time.analysis.basic_model_fitting import BasicModelFitter
-from trend_modeling import TrendModelFitter
 from envidis.time.analysis.autocorrelation_analysis import (
     AutocorrelationAnalyzer,
 )
+from envidis.time.analysis.basic_model_fitting import BasicModelFitter
+from envidis.time.analysis.trend_modeling import TrendModelFitter
+from envidis.time.demo.data_generation import generate_sample_data
+
+# Add the analysis directory to Python path
+sys.path.append("/home/callebalik/EnviDis/scripts/analysis")
 
 
 class ComprehensiveAnalysisReport:
     """Generate a comprehensive analysis report with all relevant statistics and visualizations."""
 
     def __init__(self, data=None, data_path=None, output_dir=None, use_real_data=False):
-        """
-        Initialize the comprehensive analysis report.
+        """Initialize the comprehensive analysis report.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         data : pd.DataFrame, optional
             Time series data. If None, generates sample data or loads real data.
         data_path : str, optional
@@ -49,6 +43,7 @@ class ComprehensiveAnalysisReport:
             Directory to save outputs
         use_real_data : bool, optional
             Whether to load real data from CSV
+
         """
         self.output_dir = output_dir or "/home/callebalik/EnviDis/results/analysis"
         os.makedirs(self.output_dir, exist_ok=True)
@@ -120,12 +115,12 @@ class ComprehensiveAnalysisReport:
         print(f"Prepared data shape: {df.shape}")
         print(f"Date range: {df.index.min()} to {df.index.max()}")
         print(
-            f"ObservedEntities (co_count) range: {df['ObservedEntities'].min()} to {df['ObservedEntities'].max()}"
+            f"ObservedEntities (co_count) range: {df['ObservedEntities'].min()} to {df['ObservedEntities'].max()}",
         )
 
         return df
 
-    def run_all_analyses(self):
+    def run_all_analyses(self) -> None:
         """Run all statistical analyses."""
         print("Running comprehensive statistical analysis...")
 
@@ -176,7 +171,7 @@ class ComprehensiveAnalysisReport:
                 {
                     "poisson": self.basic_fitter.poisson_results,
                     "negative_binomial": self.basic_fitter.nb_results,
-                }
+                },
             )
 
         if self.trend_fitter:
@@ -185,7 +180,7 @@ class ComprehensiveAnalysisReport:
                     "linear": self.trend_fitter.linear_results,
                     "quadratic": self.trend_fitter.poly2_results,
                     "cubic": self.trend_fitter.poly3_results,
-                }
+                },
             )
             if best_model:
                 self.models["best_trend"] = best_model
@@ -197,7 +192,7 @@ class ComprehensiveAnalysisReport:
         # For very large datasets, sample to ensure computational feasibility
         if len(self.data) > 10000:
             print(
-                f"   Large dataset detected ({len(self.data)} points). Sampling for modeling..."
+                f"   Large dataset detected ({len(self.data)} points). Sampling for modeling...",
             )
             sample_size = min(5000, len(self.data))
             modeling_data = self.data.sample(n=sample_size, random_state=42)
@@ -261,7 +256,7 @@ class ComprehensiveAnalysisReport:
                                     )
                                 )
                             ),
-                        }
+                        },
                     )
 
         return pd.DataFrame(coef_data)
@@ -317,7 +312,7 @@ class ComprehensiveAnalysisReport:
                     {
                         "ObservedEntities": "sum",
                         "TotalDocuments": "sum",
-                    }
+                    },
                 )
                 .reset_index()
             )
@@ -452,10 +447,15 @@ class ComprehensiveAnalysisReport:
         lines2, labels2 = ax2.get_legend_handles_labels()
         lines2_norm, labels2_norm = ax2_norm.get_legend_handles_labels()
         ax2.legend(
-            lines2 + lines2_norm, labels2 + labels2_norm, loc="upper left", fontsize=9
+            lines2 + lines2_norm,
+            labels2 + labels2_norm,
+            loc="upper left",
+            fontsize=9,
         )
         ax2.set_title(
-            "B. Absolute vs Normalized Trends", fontsize=12, fontweight="bold"
+            "B. Absolute vs Normalized Trends",
+            fontsize=12,
+            fontweight="bold",
         )
 
         if is_date_index:
@@ -498,7 +498,9 @@ class ComprehensiveAnalysisReport:
 
             ax3.set_ylabel("Information Criterion Value", fontsize=10)
             ax3.set_title(
-                "C. Model Comparison (Lower = Better)", fontsize=12, fontweight="bold"
+                "C. Model Comparison (Lower = Better)",
+                fontsize=12,
+                fontweight="bold",
             )
             ax3.set_xticks(x)
             ax3.set_xticklabels(model_names, rotation=45, ha="right", fontsize=8)
@@ -537,7 +539,9 @@ class ComprehensiveAnalysisReport:
                 fontsize=12,
             )
             ax3.set_title(
-                "C. Model Comparison (Failed)", fontsize=12, fontweight="bold"
+                "C. Model Comparison (Failed)",
+                fontsize=12,
+                fontweight="bold",
             )
 
         # 4. Trend Fitting Visualization
@@ -628,14 +632,18 @@ class ComprehensiveAnalysisReport:
             ax5.set_xlabel("Fitted Values", fontsize=10)
             ax5.set_ylabel("Standardized Residuals", fontsize=10)
             ax5.set_title(
-                "E. Residuals vs Fitted Values", fontsize=12, fontweight="bold"
+                "E. Residuals vs Fitted Values",
+                fontsize=12,
+                fontweight="bold",
             )
             ax5.grid(True, alpha=0.3)
 
             # Q-Q Plot
             stats.probplot(best_model.resid_pearson, dist="norm", plot=ax6)
             ax6.set_title(
-                "F. Q-Q Plot (Normality Check)", fontsize=12, fontweight="bold"
+                "F. Q-Q Plot (Normality Check)",
+                fontsize=12,
+                fontweight="bold",
             )
             ax6.grid(True, alpha=0.3)
         else:
@@ -649,7 +657,9 @@ class ComprehensiveAnalysisReport:
                 fontsize=12,
             )
             ax5.set_title(
-                "E. Residuals vs Fitted Values (N/A)", fontsize=12, fontweight="bold"
+                "E. Residuals vs Fitted Values (N/A)",
+                fontsize=12,
+                fontweight="bold",
             )
 
             ax6.text(
@@ -707,7 +717,9 @@ class ComprehensiveAnalysisReport:
                 fontsize=12,
             )
             ax7.set_title(
-                "G. Autocorrelation Analysis (N/A)", fontsize=12, fontweight="bold"
+                "G. Autocorrelation Analysis (N/A)",
+                fontsize=12,
+                fontweight="bold",
             )
 
         # 7. Model Coefficients Visualization
@@ -750,7 +762,9 @@ class ComprehensiveAnalysisReport:
                 ax8.set_yticklabels(params, fontsize=9)
                 ax8.set_xlabel("Coefficient Value", fontsize=10)
                 ax8.set_title(
-                    "H. Coefficient Estimates (95% CI)", fontsize=12, fontweight="bold"
+                    "H. Coefficient Estimates (95% CI)",
+                    fontsize=12,
+                    fontweight="bold",
                 )
                 ax8.grid(True, alpha=0.3)
             else:
@@ -764,7 +778,9 @@ class ComprehensiveAnalysisReport:
                     fontsize=12,
                 )
                 ax8.set_title(
-                    "H. Coefficient Estimates (N/A)", fontsize=12, fontweight="bold"
+                    "H. Coefficient Estimates (N/A)",
+                    fontsize=12,
+                    fontweight="bold",
                 )
         else:
             ax8.text(
@@ -777,7 +793,9 @@ class ComprehensiveAnalysisReport:
                 fontsize=12,
             )
             ax8.set_title(
-                "H. Coefficient Estimates (N/A)", fontsize=12, fontweight="bold"
+                "H. Coefficient Estimates (N/A)",
+                fontsize=12,
+                fontweight="bold",
             )
 
         # 8-9. Model Summary Tables (Bottom section)
@@ -795,7 +813,7 @@ class ComprehensiveAnalysisReport:
                         row["BIC"],
                         row["Pseudo R²"],
                         row["N Observations"],
-                    ]
+                    ],
                 )
 
             table = ax9.table(
@@ -874,7 +892,7 @@ class ComprehensiveAnalysisReport:
                             row["P-value"],
                             row["Significant"],
                             f"[{row['CI Lower (95%)']}, {row['CI Upper (95%)']}]",
-                        ]
+                        ],
                     )
 
                 coef_table_widget = ax10.table(
@@ -982,7 +1000,7 @@ class ComprehensiveAnalysisReport:
             and "best_overall" in self.comparison
         ):
             footer_parts.append(
-                f"Best model: {self.comparison['best_overall'].title()}"
+                f"Best model: {self.comparison['best_overall'].title()}",
             )
         else:
             footer_parts.append("Best model: N/A")
@@ -1107,7 +1125,8 @@ Best Model Selection:
         # Save individual tables
         model_summary = self.create_model_summary_table()
         model_summary.to_csv(
-            f"{self.output_dir}/comprehensive_report/model_summary.csv", index=False
+            f"{self.output_dir}/comprehensive_report/model_summary.csv",
+            index=False,
         )
 
         coef_table = self.create_coefficients_table()
@@ -1119,19 +1138,20 @@ Best Model Selection:
         # Save text summary
         summary_text = self.create_diagnostic_summary_text()
         with open(
-            f"{self.output_dir}/comprehensive_report/analysis_summary.txt", "w"
+            f"{self.output_dir}/comprehensive_report/analysis_summary.txt",
+            "w",
         ) as f:
             f.write(summary_text)
 
         print("Additional files saved:")
         print(
-            f"- Model summary: {self.output_dir}/comprehensive_report/model_summary.csv"
+            f"- Model summary: {self.output_dir}/comprehensive_report/model_summary.csv",
         )
         print(
-            f"- Coefficients: {self.output_dir}/comprehensive_report/coefficients_table.csv"
+            f"- Coefficients: {self.output_dir}/comprehensive_report/coefficients_table.csv",
         )
         print(
-            f"- Text summary: {self.output_dir}/comprehensive_report/analysis_summary.txt"
+            f"- Text summary: {self.output_dir}/comprehensive_report/analysis_summary.txt",
         )
 
         # Display the plot
@@ -1156,7 +1176,8 @@ def main(use_real_data=False, data_path=None):
     if use_real_data:
         print("Using real time series data...")
         report_generator = ComprehensiveAnalysisReport(
-            use_real_data=True, data_path=data_path
+            use_real_data=True,
+            data_path=data_path,
         )
     else:
         print("Using synthetic sample data...")
